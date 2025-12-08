@@ -1,0 +1,7 @@
+<div class="homework-list">
+  <h3>Recent Homeworks</h3>
+  <div *ngFor="let h of homeworks" class="homework-item">
+    <strong>{{h.title}}</strong> — {{h.className}} — {{h.subject}}<br/>
+    <small>{{h.description}}</small>
+  </div>
+</div>

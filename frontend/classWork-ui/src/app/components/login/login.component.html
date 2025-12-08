@@ -1,0 +1,12 @@
+<div class="login-page">
+    <mat-card>
+        <h2>{{isRegister ? 'Register' : 'Teacher Login'}}</h2>
+        <div *ngIf="isRegister">
+        <mat-form-field style="width:100%"><input matInput placeholder="Name" [(ngModel)]="name"></mat-form-field>
+        </div>
+        <mat-form-field style="width:100%"><input matInput placeholder="Email" [(ngModel)]="email"></mat-form-field>
+        <mat-form-field style="width:100%"><input matInput placeholder="Password" [(ngModel)]="password" type="password"></mat-form-field>
+        <button mat-raised-button color="primary" (click)="submit()">{{isRegister ? 'Register' : 'Login'}}</button>
+        <button mat-button (click)="toggle()">{{isRegister ? 'Have an account? Login' : 'Register as teacher'}}</button>
+    </mat-card>
+</div>
