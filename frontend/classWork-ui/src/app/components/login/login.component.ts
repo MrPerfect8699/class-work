@@ -13,27 +13,42 @@ import { MatButtonModule } from '@angular/material/button';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+  ],
 })
 export class LoginComponent {
-  email = '';
-  password = '';
+  email = 's@gmail.com';
+  password = '12345';
   name = '';
   isRegister = false;
   constructor(private auth: AuthService, private router: Router) {}
 
-  toggle(){ this.isRegister = !this.isRegister; }
+  toggle() {
+    this.isRegister = !this.isRegister;
+  }
 
-  submit(){
-    if (this.isRegister){
-      this.auth.register(this.name, this.email, this.password).subscribe(()=> {
-        alert('registered — now login');
-        this.isRegister = false;
-      }, e => alert('err'));
+  submit() {
+    if (this.isRegister) {
+      this.auth.register(this.name, this.email, this.password).subscribe({
+        next: () => {
+          console.log('registered — now login');
+          this.isRegister = false;
+        },
+        error: (e) => console.error('err', e),
+      });
     } else {
-      this.auth.login(this.email, this.password).subscribe(()=> {
-        this.router.navigate(['/dashboard']);
-      }, e => alert('login failed'));
+      this.auth.login(this.email, this.password).subscribe({
+        next: () => {
+          this.router.navigate(['/dashboard']);
+        },
+        error: (e) => console.error('login failed', e),
+      });
     }
   }
 }
