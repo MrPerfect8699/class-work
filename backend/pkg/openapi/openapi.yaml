@@ -1,0 +1,448 @@
+openapi: 3.0.0
+info:
+  title: Classwork API
+  description: API for managing classroom homework assignments
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@classwork.local
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://api.classwork.local
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns the health status of the server
+      operationId: getHealth
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+
+  /api/register:
+    post:
+      summary: Register a new teacher
+      description: Creates a new teacher account
+      operationId: registerTeacher
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Teacher registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "507f1f77bcf86cd799439011"
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/login:
+    post:
+      summary: Login a teacher
+      description: Authenticates a teacher and returns a JWT token
+      operationId: loginTeacher
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT token for subsequent requests
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/homework:
+    post:
+      summary: Create a new homework assignment
+      description: Creates a new homework assignment for the authenticated teacher
+      operationId: createHomework
+      tags:
+        - Homework
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHomeworkRequest'
+      responses:
+        '201':
+          description: Homework created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Homework'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: List homework assignments
+      description: Returns all homework assignments for the authenticated teacher
+      operationId: listHomeworks
+      tags:
+        - Homework
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of homework assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Homework'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/homework/{id}:
+    get:
+      summary: Get a specific homework assignment
+      description: Retrieves a specific homework assignment by ID
+      operationId: getHomework
+      tags:
+        - Homework
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Homework ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Homework found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Homework'
+        '400':
+          description: Invalid ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Homework not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update a homework assignment
+      description: Updates an existing homework assignment
+      operationId: updateHomework
+      tags:
+        - Homework
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Homework ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHomeworkRequest'
+      responses:
+        '200':
+          description: Homework updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Homework'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Homework not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete a homework assignment
+      description: Deletes a homework assignment
+      operationId: deleteHomework
+      tags:
+        - Homework
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Homework ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Homework deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "homework deleted successfully"
+        '400':
+          description: Invalid ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Homework not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          description: Teacher's full name
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          description: Teacher's email address
+          example: "john@example.com"
+        password:
+          type: string
+          format: password
+          description: Teacher's password (minimum 6 characters)
+          example: "securepassword123"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: Teacher's email address
+          example: "john@example.com"
+        password:
+          type: string
+          format: password
+          description: Teacher's password
+          example: "securepassword123"
+
+    CreateHomeworkRequest:
+      type: object
+      required:
+        - title
+        - className
+        - subject
+      properties:
+        title:
+          type: string
+          description: Homework title
+          example: "Math Assignment 1"
+        description:
+          type: string
+          description: Homework description
+          example: "Complete chapters 1-5 from the textbook"
+        className:
+          type: string
+          description: Class name
+          example: "Class 10-A"
+        subject:
+          type: string
+          description: Subject name
+          example: "Mathematics"
+        attachments:
+          type: string
+          description: Attachment URLs or file references
+          example: "https://example.com/homework.pdf"
+
+    UpdateHomeworkRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Homework title
+          example: "Math Assignment 1"
+        description:
+          type: string
+          description: Homework description
+          example: "Complete chapters 1-5 from the textbook"
+        className:
+          type: string
+          description: Class name
+          example: "Class 10-A"
+        subject:
+          type: string
+          description: Subject name
+          example: "Mathematics"
+        attachments:
+          type: string
+          description: Attachment URLs or file references
+          example: "https://example.com/homework.pdf"
+
+    Homework:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Homework ID
+          example: "507f1f77bcf86cd799439011"
+        title:
+          type: string
+          description: Homework title
+          example: "Math Assignment 1"
+        description:
+          type: string
+          description: Homework description
+          example: "Complete chapters 1-5 from the textbook"
+        className:
+          type: string
+          description: Class name
+          example: "Class 10-A"
+        subject:
+          type: string
+          description: Subject name
+          example: "Mathematics"
+        teacherId:
+          type: string
+          description: Teacher ID
+          example: "507f1f77bcf86cd799439012"
+        attachments:
+          type: string
+          description: Attachment URLs or file references
+          example: "https://example.com/homework.pdf"
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          example: "2024-12-08T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2024-12-08T10:30:00Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Invalid input provided"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Authentication
+    description: Authentication endpoints
+  - name: Homework
+    description: Homework management endpoints

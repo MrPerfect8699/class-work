@@ -4,43 +4,71 @@ import (
 	"context"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	"github.com/yourname/classwork/backend/config"
+	"github.com/yourname/classwork/backend/internal/adapters/http"
+	"github.com/yourname/classwork/backend/internal/adapters/persistence"
+	"github.com/yourname/classwork/backend/internal/application"
 )
 
 func main() {
-	// Load env from .env file
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
+	// Load configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
 	}
-	log.Println("Starting server...")
-	ConnectDB() // Ensure database connection is closed on exit
-	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if err := DB.Disconnect(ctx); err != nil {
-			log.Printf("Error disconnecting from MongoDB: %v", err)
+
+	cfg.LogConfig()
+
+	// Connect to MongoDB
+	mongoDB, err := persistence.NewMongoDB(&cfg.Database)
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
+	}
+	log.Println("Connected to MongoDB successfully")
+
+	// Initialize repositories
+	teacherRepo := persistence.NewTeacherRepository(mongoDB.GetDB())
+	homeworkRepo := persistence.NewHomeworkRepository(mongoDB.GetDB())
+
+	// Initialize services
+	authService := application.NewAuthService(teacherRepo, cfg)
+	homeworkService := application.NewHomeworkService(homeworkRepo)
+
+	// Initialize HTTP handler
+	handler := http.NewHandler(authService, homeworkService)
+
+	// Create and start server with Chi router and CORS
+	server := http.NewServer(handler, &cfg.Server)
+
+	// Start server in a goroutine
+	go func() {
+		if err := server.Start(); err != nil {
+			log.Fatalf("Server failed to start: %v", err)
 		}
 	}()
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	// Wait for shutdown signal
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
+
+	log.Println("Shutting down server...")
+
+	// Graceful shutdown with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("Error shutting down server: %v", err)
 	}
-	r := gin.Default()
 
-	r.POST("/api/register", Register)
-	r.POST("/api/login", Login)
-
-	protected := r.Group("/api")
-	protected.Use(AuthMiddleware())
-	{
-		protected.POST("/homework", CreateHomework)
-		protected.GET("/homeworks", ListHomeworks)
+	if err := mongoDB.Close(ctx); err != nil {
+		log.Printf("Error closing MongoDB connection: %v", err)
 	}
 
-	log.Printf("server running on :%s", port)
-	r.Run(":" + port)
+	log.Println("Server stopped")
 }
