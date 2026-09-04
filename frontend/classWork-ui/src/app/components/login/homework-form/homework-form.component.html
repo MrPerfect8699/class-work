@@ -1,8 +1,129 @@
 
-<div class="homework-form">
-  <mat-form-field><input matInput placeholder="Title" [(ngModel)]="title"></mat-form-field>
-  <mat-form-field><input matInput placeholder="Class (eg. 5A)" [(ngModel)]="className"></mat-form-field>
-  <mat-form-field><input matInput placeholder="Subject" [(ngModel)]="subject"></mat-form-field>
-  <mat-form-field><textarea matInput placeholder="Description" [(ngModel)]="description"></textarea></mat-form-field>
-  <button mat-raised-button color="accent" (click)="create()">Create Homework</button>
-</div>
+<mat-card class="form-card">
+  <div class="card-header">
+    <div class="header-icon-badge">
+      <mat-icon>add_task</mat-icon>
+    </div>
+    <div>
+      <h3 class="header-title">Create Assignment</h3>
+      <p class="header-subtitle">Publish homework to your students</p>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  @if (errorMessage) {
+    <div class="alert alert-error" role="alert">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span class="alert-text">{{ errorMessage }}</span>
+      <button mat-icon-button type="button" class="alert-dismiss" (click)="dismissAlert()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Success Alert -->
+  @if (successMessage) {
+    <div class="alert alert-success" role="alert">
+      <mat-icon class="alert-icon">check_circle_outline</mat-icon>
+      <span class="alert-text">{{ successMessage }}</span>
+      <button mat-icon-button type="button" class="alert-dismiss" (click)="dismissAlert()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <form [formGroup]="homeworkForm" (ngSubmit)="onSubmit()" class="form-body">
+    <!-- Title -->
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Assignment Title</mat-label>
+      <input
+        matInput
+        type="text"
+        formControlName="title"
+        placeholder="e.g. Linear Algebra Problem Set 4"
+        required
+      />
+      <mat-icon matPrefix class="field-icon">title</mat-icon>
+      @if (homeworkForm.get('title')?.hasError('required')) {
+        <mat-error>Title is required</mat-error>
+      } @else if (homeworkForm.get('title')?.hasError('minlength')) {
+        <mat-error>Title must be at least 3 characters</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Class & Subject Grid -->
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Class / Grade</mat-label>
+        <mat-select formControlName="className" required>
+          @for (c of classes; track c) {
+            <mat-option [value]="c">{{ c }}</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix class="field-icon">groups</mat-icon>
+        @if (homeworkForm.get('className')?.hasError('required')) {
+          <mat-error>Class is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Subject</mat-label>
+        <mat-select formControlName="subject" required>
+          @for (s of subjects; track s) {
+            <mat-option [value]="s">{{ s }}</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix class="field-icon">subject</mat-icon>
+        @if (homeworkForm.get('subject')?.hasError('required')) {
+          <mat-error>Subject is required</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- Description -->
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Instructions & Details</mat-label>
+      <textarea
+        matInput
+        formControlName="description"
+        rows="4"
+        placeholder="Detailed homework tasks, page numbers, instructions..."
+        required
+      ></textarea>
+      <mat-icon matPrefix class="field-icon">description</mat-icon>
+      @if (homeworkForm.get('description')?.hasError('required')) {
+        <mat-error>Description is required</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Attachments -->
+    <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Attachment Link (Optional)</mat-label>
+      <input
+        matInput
+        type="url"
+        formControlName="attachments"
+        placeholder="e.g. https://drive.google.com/file/..."
+      />
+      <mat-icon matPrefix class="field-icon">attachment</mat-icon>
+      <mat-hint>Link to worksheet, PDF, or reference materials</mat-hint>
+    </mat-form-field>
+
+    <!-- Submit Button -->
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      class="submit-btn"
+      [disabled]="isLoading || homeworkForm.invalid"
+    >
+      @if (isLoading) {
+        <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+      } @else {
+        <mat-icon class="btn-icon">publish</mat-icon>
+        <span>Publish Assignment</span>
+      }
+    </button>
+  </form>
+</mat-card>
+

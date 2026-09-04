@@ -1,7 +1,71 @@
-<div class="dashboard">
-  <mat-card>
-      <h2>Teacher Dashboard</h2>
-      <app-homework-form></app-homework-form>
-      <app-homework-list></app-homework-list>
-  </mat-card>
+<div class="dashboard-wrapper">
+  <!-- Top Navigation Toolbar -->
+  <mat-toolbar class="navbar">
+    <div class="navbar-left">
+      <div class="navbar-brand-badge">
+        <mat-icon>school</mat-icon>
+      </div>
+      <div class="navbar-titles">
+        <span class="app-title">Classwork</span>
+        <span class="page-tag">Teacher Portal</span>
+      </div>
+    </div>
+
+    <div class="navbar-right">
+      <div class="user-pill">
+        <span class="status-dot"></span>
+        <span class="user-label">Teacher Active</span>
+      </div>
+
+      <button
+        mat-stroked-button
+        color="warn"
+        class="logout-btn"
+        (click)="logout()"
+        aria-label="Log out of application"
+      >
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </div>
+  </mat-toolbar>
+
+  <!-- Main Content Body -->
+  <main class="dashboard-content">
+    <!-- Welcome Header Banner -->
+    <div class="welcome-banner">
+      <div class="banner-text">
+        <h2>Teacher Dashboard</h2>
+        <p>Publish homework assignments, attach study material, and manage your classrooms.</p>
+      </div>
+
+      <div class="quick-stats">
+        <div class="stat-card">
+          <mat-icon class="stat-icon">assignment</mat-icon>
+          <div class="stat-info">
+            <span class="stat-value">{{ homeworks.length }}</span>
+            <span class="stat-label">Active Assignments</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2-Column Responsive Layout -->
+    <div class="dashboard-grid">
+      <!-- Left Column: Create Homework Form -->
+      <section class="grid-col form-col">
+        <app-homework-form (homeworkCreated)="onHomeworkCreated()"></app-homework-form>
+      </section>
+
+      <!-- Right Column: Homework Assignments List -->
+      <section class="grid-col list-col">
+        <app-homework-list
+          [homeworks]="homeworks"
+          [isLoading]="isLoading"
+          (refreshRequested)="loadHomeworks()"
+        ></app-homework-list>
+      </section>
+    </div>
+  </main>
 </div>
+

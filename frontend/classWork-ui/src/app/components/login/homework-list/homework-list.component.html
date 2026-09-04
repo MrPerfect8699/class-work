@@ -1,7 +1,134 @@
-<div class="homework-list">
-  <h3>Recent Homeworks</h3>
-  <div *ngFor="let h of homeworks" class="homework-item">
-    <strong>{{h.title}}</strong> — {{h.className}} — {{h.subject}}<br/>
-    <small>{{h.description}}</small>
+<div class="list-container">
+  <!-- List Header & Search Bar -->
+  <div class="list-header">
+    <div class="header-left">
+      <h3 class="list-title">Assigned Homework</h3>
+      <span class="count-badge">{{ homeworks.length }} Total</span>
+    </div>
+
+    <button
+      mat-icon-button
+      color="primary"
+      (click)="refreshRequested.emit()"
+      [disabled]="isLoading"
+      aria-label="Refresh homework list"
+      class="refresh-btn"
+    >
+      <mat-icon [class.spin-icon]="isLoading">refresh</mat-icon>
+    </button>
   </div>
+
+  <!-- Search Filter -->
+  @if (homeworks.length > 0) {
+    <div class="search-box">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-icon matPrefix class="search-icon">search</mat-icon>
+        <input
+          matInput
+          [(ngModel)]="searchTerm"
+          placeholder="Filter by title, class, or subject..."
+        />
+        @if (searchTerm) {
+          <button
+            mat-icon-button
+            matSuffix
+            (click)="searchTerm = ''"
+            aria-label="Clear search"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+    </div>
+  }
+
+  <!-- Error Banner -->
+  @if (errorMessage) {
+    <div class="alert alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span class="alert-text">{{ errorMessage }}</span>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading) {
+    <div class="loading-state">
+      <mat-spinner diameter="36"></mat-spinner>
+      <p>Loading assignments...</p>
+    </div>
+  } @else {
+    <!-- Assignments Grid / Cards -->
+    <div class="homework-cards">
+      @for (h of filteredHomeworks; track h.id || $index) {
+        <mat-card class="hw-card">
+          <div class="hw-card-top">
+            <div class="hw-meta-badges">
+              <span class="badge badge-class">
+                <mat-icon class="badge-icon">groups</mat-icon>
+                {{ h.className }}
+              </span>
+              <span class="badge" [ngClass]="getSubjectColor(h.subject)">
+                <mat-icon class="badge-icon">subject</mat-icon>
+                {{ h.subject }}
+              </span>
+            </div>
+
+            <button
+              mat-icon-button
+              color="warn"
+              class="delete-btn"
+              (click)="deleteHomework(h.id)"
+              [disabled]="deletingId === h.id"
+              aria-label="Delete homework assignment"
+            >
+              @if (deletingId === h.id) {
+                <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+                <mat-icon>delete_outline</mat-icon>
+              }
+            </button>
+          </div>
+
+          <h4 class="hw-title">{{ h.title }}</h4>
+          <p class="hw-desc">{{ h.description }}</p>
+
+          <div class="hw-card-bottom">
+            @if (h.createdAt) {
+              <span class="hw-date">
+                <mat-icon class="date-icon">schedule</mat-icon>
+                Published: {{ h.createdAt | date:'mediumDate' }}
+              </span>
+            }
+
+            @if (h.attachments) {
+              <a
+                mat-stroked-button
+                color="primary"
+                [href]="h.attachments"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="attachment-link"
+              >
+                <mat-icon>attach_file</mat-icon>
+                <span>Attachment</span>
+              </a>
+            }
+          </div>
+        </mat-card>
+      } @empty {
+        <div class="empty-state">
+          <div class="empty-icon-circle">
+            <mat-icon class="empty-icon">assignment</mat-icon>
+          </div>
+          @if (searchTerm) {
+            <h4>No matches found</h4>
+            <p>No assignments match "{{ searchTerm }}". Try a different search term.</p>
+          } @else {
+            <h4>No assignments yet</h4>
+            <p>Use the form on the left to create and publish homework for your students.</p>
+          }
+        </div>
+      }
+    </div>
+  }
 </div>
