@@ -2,16 +2,16 @@ package application
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/yourname/classwork/backend/config"
 	"github.com/yourname/classwork/backend/internal/domain"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// AuthServiceImpl implements the AuthService interface
+// AuthServiceImpl implements the ports.AuthService interface
 type AuthServiceImpl struct {
 	teacherRepo domain.TeacherRepository
 	config      *config.Config
@@ -25,36 +25,52 @@ func NewAuthService(teacherRepo domain.TeacherRepository, cfg *config.Config) *A
 	}
 }
 
-// Register registers a new teacher
-func (s *AuthServiceImpl) Register(name, email, password string) (primitive.ObjectID, error) {
+// Register registers a new teacher with full registration info
+func (s *AuthServiceImpl) Register(teacher *domain.Teacher) (*domain.Teacher, error) {
+	if teacher.Email == "" || teacher.Name == "" || teacher.Password == "" {
+		return nil, fmt.Errorf("name, email, and password are required")
+	}
+
 	// Check if email already exists
-	_, err := s.teacherRepo.FindByEmail(email)
+	_, err := s.teacherRepo.FindByEmail(teacher.Email)
 	if err == nil {
-		return primitive.NilObjectID, fmt.Errorf("email already taken")
+		return nil, fmt.Errorf("email already taken")
+	}
+
+	// Auto-generate teacher_id code if not provided
+	if teacher.TeacherID == "" {
+		teacher.TeacherID = fmt.Sprintf("TCH-%d", time.Now().Unix())
+	} else {
+		// Check if provided teacher_id code already exists
+		_, err := s.teacherRepo.FindByTeacherID(teacher.TeacherID)
+		if err == nil {
+			return nil, fmt.Errorf("teacher_id '%s' is already registered", teacher.TeacherID)
+		}
 	}
 
 	// Hash password
-	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashed, err := bcrypt.GenerateFromPassword([]byte(teacher.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("failed to hash password: %w", err)
+		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
+	teacher.Password = string(hashed)
 
-	// Create teacher
-	teacher := &domain.Teacher{
-		ID:        primitive.NewObjectID(),
-		Name:      name,
-		Email:     email,
-		Password:  string(hashed),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+	// Set defaults
+	if teacher.Status == "" {
+		teacher.Status = "ACTIVE"
 	}
+	if teacher.Designation == "" {
+		teacher.Designation = "Teacher"
+	}
+	teacher.CreatedAt = time.Now()
+	teacher.UpdatedAt = time.Now()
 
 	err = s.teacherRepo.Save(teacher)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("failed to save teacher: %w", err)
+		return nil, fmt.Errorf("failed to save teacher: %w", err)
 	}
 
-	return teacher.ID, nil
+	return teacher, nil
 }
 
 // Login authenticates a teacher and returns a JWT token
@@ -73,10 +89,11 @@ func (s *AuthServiceImpl) Login(email, password string) (string, error) {
 
 	// Generate JWT token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"teacher_id": teacher.ID.Hex(),
-		"email":      teacher.Email,
-		"exp":        time.Now().Add(s.config.JWT.ExpirationTime).Unix(),
-		"iat":        time.Now().Unix(),
+		"teacher_id":   teacher.ID,
+		"teacher_code": teacher.TeacherID,
+		"email":        teacher.Email,
+		"exp":          time.Now().Add(s.config.JWT.ExpirationTime).Unix(),
+		"iat":          time.Now().Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(s.config.JWT.Secret))
@@ -88,29 +105,39 @@ func (s *AuthServiceImpl) Login(email, password string) (string, error) {
 }
 
 // ValidateToken validates a JWT token and returns the teacher ID
-func (s *AuthServiceImpl) ValidateToken(tokenString string) (primitive.ObjectID, error) {
+func (s *AuthServiceImpl) ValidateToken(tokenString string) (int64, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.config.JWT.Secret), nil
 	})
 
 	if err != nil || !token.Valid {
-		return primitive.NilObjectID, fmt.Errorf("invalid token")
+		return 0, fmt.Errorf("invalid token")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return primitive.NilObjectID, fmt.Errorf("invalid token claims")
+		return 0, fmt.Errorf("invalid token claims")
 	}
 
-	teacherIDHex, ok := claims["teacher_id"].(string)
-	if !ok {
-		return primitive.NilObjectID, fmt.Errorf("invalid teacher_id in token")
+	val, exists := claims["teacher_id"]
+	if !exists {
+		return 0, fmt.Errorf("invalid teacher_id in token")
 	}
 
-	teacherID, err := primitive.ObjectIDFromHex(teacherIDHex)
-	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("invalid teacher_id format")
+	switch v := val.(type) {
+	case float64:
+		return int64(v), nil
+	case int64:
+		return v, nil
+	case int:
+		return int64(v), nil
+	case string:
+		id, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("invalid teacher_id format")
+		}
+		return id, nil
+	default:
+		return 0, fmt.Errorf("invalid teacher_id type in token")
 	}
-
-	return teacherID, nil
 }

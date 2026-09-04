@@ -23,16 +23,16 @@ func main() {
 
 	cfg.LogConfig()
 
-	// Connect to MongoDB
-	mongoDB, err := persistence.NewMongoDB(&cfg.Database)
+	// Connect to PostgreSQL
+	postgresDB, err := persistence.NewPostgresDB(&cfg.Database)
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 	}
-	log.Println("Connected to MongoDB successfully")
+	log.Println("Connected to PostgreSQL and initialized schema successfully")
 
 	// Initialize repositories
-	teacherRepo := persistence.NewTeacherRepository(mongoDB.GetDB())
-	homeworkRepo := persistence.NewHomeworkRepository(mongoDB.GetDB())
+	teacherRepo := persistence.NewTeacherRepository(postgresDB.GetDB())
+	homeworkRepo := persistence.NewHomeworkRepository(postgresDB.GetDB())
 
 	// Initialize services
 	authService := application.NewAuthService(teacherRepo, cfg)
@@ -66,8 +66,8 @@ func main() {
 		log.Printf("Error shutting down server: %v", err)
 	}
 
-	if err := mongoDB.Close(ctx); err != nil {
-		log.Printf("Error closing MongoDB connection: %v", err)
+	if err := postgresDB.Close(ctx); err != nil {
+		log.Printf("Error closing PostgreSQL connection: %v", err)
 	}
 
 	log.Println("Server stopped")

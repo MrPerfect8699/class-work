@@ -5,10 +5,9 @@ import (
 	"time"
 
 	"github.com/yourname/classwork/backend/internal/domain"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// HomeworkServiceImpl implements the HomeworkService interface
+// HomeworkServiceImpl implements the ports.HomeworkService interface
 type HomeworkServiceImpl struct {
 	homeworkRepo domain.HomeworkRepository
 }
@@ -25,11 +24,10 @@ func (s *HomeworkServiceImpl) CreateHomework(homework *domain.Homework) error {
 	if homework.Title == "" {
 		return fmt.Errorf("title is required")
 	}
-	if homework.TeacherID == primitive.NilObjectID {
+	if homework.TeacherID <= 0 {
 		return fmt.Errorf("teacher_id is required")
 	}
 
-	homework.ID = primitive.NewObjectID()
 	homework.CreatedAt = time.Now()
 	homework.UpdatedAt = time.Now()
 
@@ -37,8 +35,8 @@ func (s *HomeworkServiceImpl) CreateHomework(homework *domain.Homework) error {
 }
 
 // GetHomeworksByTeacher retrieves all homework assignments for a specific teacher
-func (s *HomeworkServiceImpl) GetHomeworksByTeacher(teacherID primitive.ObjectID) ([]domain.Homework, error) {
-	if teacherID == primitive.NilObjectID {
+func (s *HomeworkServiceImpl) GetHomeworksByTeacher(teacherID int64) ([]domain.Homework, error) {
+	if teacherID <= 0 {
 		return nil, fmt.Errorf("teacher_id is required")
 	}
 
@@ -69,8 +67,8 @@ func (s *HomeworkServiceImpl) GetAllHomeworks() ([]domain.Homework, error) {
 }
 
 // GetHomeworkByID retrieves a specific homework assignment by ID
-func (s *HomeworkServiceImpl) GetHomeworkByID(id primitive.ObjectID) (*domain.Homework, error) {
-	if id == primitive.NilObjectID {
+func (s *HomeworkServiceImpl) GetHomeworkByID(id int64) (*domain.Homework, error) {
+	if id <= 0 {
 		return nil, fmt.Errorf("homework_id is required")
 	}
 
@@ -84,7 +82,7 @@ func (s *HomeworkServiceImpl) GetHomeworkByID(id primitive.ObjectID) (*domain.Ho
 
 // UpdateHomework updates an existing homework assignment
 func (s *HomeworkServiceImpl) UpdateHomework(homework *domain.Homework) error {
-	if homework.ID == primitive.NilObjectID {
+	if homework.ID <= 0 {
 		return fmt.Errorf("homework_id is required")
 	}
 
@@ -93,8 +91,8 @@ func (s *HomeworkServiceImpl) UpdateHomework(homework *domain.Homework) error {
 }
 
 // DeleteHomework deletes a homework assignment
-func (s *HomeworkServiceImpl) DeleteHomework(id primitive.ObjectID) error {
-	if id == primitive.NilObjectID {
+func (s *HomeworkServiceImpl) DeleteHomework(id int64) error {
+	if id <= 0 {
 		return fmt.Errorf("homework_id is required")
 	}
 

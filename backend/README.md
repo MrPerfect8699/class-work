@@ -37,7 +37,7 @@ The project follows **Hexagonal Architecture (Ports & Adapters)** - think of it 
 │       │   └── 🌍 cors.go             # CORS config for localhost
 │       │
 │       └── 💾 persistence/            # Database adapter (permanent storage)
-│           ├── 🗄️  mongodb.go         # MongoDB connection handler
+│           ├── 🗄️  postgres.go        # PostgreSQL connection & schema handler
 │           ├── 👨‍💼 teacher_repository.go    # Save/fetch teachers
 │           └── 📖 homework_repository.go   # Save/fetch homework
 │
@@ -61,7 +61,7 @@ The project follows **Hexagonal Architecture (Ports & Adapters)** - think of it 
 
 ### 🔌 Adapters Layer - _"The Stunt Doubles"_
 - **🌐 HTTP Adapter**: Chi Router + Middleware = _"Hello Internet!"_
-- **💾 Persistence Adapter**: MongoDB = _"Remember everything, forget nothing!"_
+- **💾 Persistence Adapter**: PostgreSQL = _"Remember everything, forget nothing!"_
 - **🤝 Purpose**: Translates between the outside world and our beautiful domain
 
 ---
@@ -74,7 +74,7 @@ The project follows **Hexagonal Architecture (Ports & Adapters)** - think of it 
 | Homework CRUD operations | ✅ Implemented | 📝 |
 | Role-based access control | ✅ Implemented | 🛡️  |
 | Password hashing (bcrypt) | ✅ Implemented | 🔒 |
-| MongoDB persistence | ✅ Implemented | 💾 |
+| PostgreSQL persistence | ✅ Implemented | 💾 |
 | Configuration management | ✅ Implemented | ⚙️  |
 | Error handling (awesome) | ✅ Implemented | 🎯 |
 | OpenAPI 3.0 documentation | ✅ Implemented | 📖 |
@@ -86,7 +86,7 @@ The project follows **Hexagonal Architecture (Ports & Adapters)** - think of it 
 ## 🛠️ Prerequisites (What You Need in Your Toolkit)
 
 - **Go** 1.19+ _(the brains)_
-- **MongoDB** 4.0+ _(the memory)_
+- **PostgreSQL** 12+ _(the memory)_
 - **Git** _(the time machine)_
 - **Coffee** ☕ _(optional but highly recommended)_
 
@@ -118,8 +118,13 @@ Edit `.env` with your settings:
 HOST=localhost
 PORT=8080
 
-# 💾 MongoDB
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/
+# 💾 PostgreSQL
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=classwork
+DB_SSLMODE=disable
 
 # 🔑 JWT
 JWT_SECRET=your-super-secret-key-here

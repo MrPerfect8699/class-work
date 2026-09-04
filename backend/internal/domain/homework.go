@@ -2,40 +2,38 @@ package domain
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Homework represents a homework assignment in the domain
 type Homework struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Title       string             `bson:"title" json:"title"`
-	Description string             `bson:"description" json:"description"`
-	ClassName   string             `bson:"className" json:"className"`
-	Subject     string             `bson:"subject" json:"subject"`
-	TeacherID   primitive.ObjectID `bson:"teacherId" json:"teacherId"`
-	Attachments string             `bson:"attachments" json:"attachments"`
-	CreatedAt   time.Time          `bson:"created_at" json:"createdAt"`
-	UpdatedAt   time.Time          `bson:"updated_at" json:"updatedAt"`
+	ID          int64     `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	ClassName   string    `json:"className"`
+	Subject     string    `json:"subject"`
+	TeacherID   int64     `json:"teacherId"`
+	Attachments string    `json:"attachments"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 // Submission represents a homework submission
 type Submission struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	HomeworkID  primitive.ObjectID `bson:"homeworkId" json:"homeworkId"`
-	StudentName string             `bson:"studentName" json:"studentName"`
-	Completed   bool               `bson:"completed" json:"completed"`
-	Notes       string             `bson:"notes" json:"notes"`
-	CreatedAt   time.Time          `bson:"created_at" json:"createdAt"`
-	UpdatedAt   time.Time          `bson:"updated_at" json:"updatedAt"`
+	ID          int64     `json:"id"`
+	HomeworkID  int64     `json:"homeworkId"`
+	StudentName string    `json:"studentName"`
+	Completed   bool      `json:"completed"`
+	Notes       string    `json:"notes"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 // HomeworkRepository defines the interface for homework persistence
 type HomeworkRepository interface {
 	Save(homework *Homework) error
-	FindByID(id primitive.ObjectID) (*Homework, error)
-	FindByTeacherID(teacherID primitive.ObjectID) ([]Homework, error)
+	FindByID(id int64) (*Homework, error)
+	FindByTeacherID(teacherID int64) ([]Homework, error)
 	FindAll() ([]Homework, error)
 	Update(homework *Homework) error
-	Delete(id primitive.ObjectID) error
+	Delete(id int64) error
 }

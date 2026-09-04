@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -26,13 +27,28 @@ type ServerConfig struct {
 	IdleTimeout  time.Duration
 }
 
-// DatabaseConfig holds database configuration
+// DatabaseConfig holds PostgreSQL database configuration
 type DatabaseConfig struct {
-	URI         string
-	Name        string
-	ConnTimeout time.Duration
-	MaxPoolSize uint64
-	MinPoolSize uint64
+	Host            string
+	Port            int
+	User            string
+	Password        string
+	Name            string
+	SSLMode         string
+	URL             string
+	ConnTimeout     time.Duration
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime time.Duration
+}
+
+// DSN returns the PostgreSQL connection data source name
+func (db *DatabaseConfig) DSN() string {
+	if db.URL != "" {
+		return db.URL
+	}
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s connect_timeout=%d",
+		db.Host, db.Port, db.User, db.Password, db.Name, db.SSLMode, int(db.ConnTimeout.Seconds()))
 }
 
 // JWTConfig holds JWT configuration
@@ -58,11 +74,17 @@ func LoadConfig() (*Config, error) {
 			IdleTimeout:  getEnvDuration("IDLE_TIMEOUT", 120*time.Second),
 		},
 		Database: DatabaseConfig{
-			URI:         getEnvString("MONGODB_URI", "mongodb://localhost:27017"),
-			Name:        getEnvString("DATABASE_NAME", "classwork"),
-			ConnTimeout: getEnvDuration("DB_CONN_TIMEOUT", 10*time.Second),
-			MaxPoolSize: getEnvUint64("DB_MAX_POOL_SIZE", 100),
-			MinPoolSize: getEnvUint64("DB_MIN_POOL_SIZE", 10),
+			Host:            getEnvString("DB_HOST", "localhost"),
+			Port:            getEnvInt("DB_PORT", 5432),
+			User:            getEnvString("DB_USER", "postgres"),
+			Password:        getEnvString("DB_PASSWORD", "postgres"),
+			Name:            getEnvString("DB_NAME", getEnvString("DATABASE_NAME", "classwork")),
+			SSLMode:         getEnvString("DB_SSLMODE", "disable"),
+			URL:             getEnvString("DATABASE_URL", getEnvString("POSTGRES_URI", "")),
+			ConnTimeout:     getEnvDuration("DB_CONN_TIMEOUT", 10*time.Second),
+			MaxOpenConns:    getEnvInt("DB_MAX_OPEN_CONNS", 25),
+			MaxIdleConns:    getEnvInt("DB_MAX_IDLE_CONNS", 5),
+			ConnMaxLifetime: getEnvDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute),
 		},
 		JWT: JWTConfig{
 			Secret:         getEnvString("JWT_SECRET", "your-secret-key-change-in-production"),
@@ -96,15 +118,6 @@ func getEnvInt(key string, defaultValue int) int {
 	return defaultValue
 }
 
-func getEnvUint64(key string, defaultValue uint64) uint64 {
-	if value := os.Getenv(key); value != "" {
-		if uintVal, err := strconv.ParseUint(value, 10, 64); err == nil {
-			return uintVal
-		}
-	}
-	return defaultValue
-}
-
 func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
 	if value := os.Getenv(key); value != "" {
 		if duration, err := time.ParseDuration(value); err == nil {
@@ -119,7 +132,7 @@ func (c *Config) LogConfig() {
 	log.Println("=== Application Configuration ===")
 	log.Printf("Environment: %s", c.Env)
 	log.Printf("Server: %s:%d", c.Server.Host, c.Server.Port)
-	log.Printf("Database: %s", c.Database.Name)
+	log.Printf("Database: %s (%s:%d)", c.Database.Name, c.Database.Host, c.Database.Port)
 	log.Printf("Read Timeout: %s", c.Server.ReadTimeout)
 	log.Printf("Write Timeout: %s", c.Server.WriteTimeout)
 	log.Printf("JWT Expiration: %s", c.JWT.ExpirationTime)
