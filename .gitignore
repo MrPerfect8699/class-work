@@ -1,6 +1,82 @@
-node_modules
-/dist
-/frontend/class-work-ui/node_modules
-/backend/vendor
+# ==========================================================
+# Root .gitignore for Classwork Project (Go + Angular)
+# ==========================================================
+
+# Go Binaries and Build Artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+__debug_bin*
+__debug_bin*.*
+backend/__debug_bin*
+backend/__debug_bin*.exe
+backend/backend.exe
+backend/backend
+backend/main
+backend/bin/
+bin/
+
+# Delve Debugger Artifacts
+.dlv/
+debug
+debug.test
+
+# Node & Package Managers
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.angular/
+**/.angular/
+.npm/
+package-lock.json.backup
+
+# Environment & Secret Files
 .env
+.env.local
+.env.*.local
+*.env.backup
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDEs and Editors
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-project
+*.sublime-workspace
+.history/
+*.swp
+*.swo
+*~
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary & Cache Directories
+tmp/
+**/tmp/
+temp/
+**/temp/
+out-tsc/
+bazel-out/
+.sass-cache/
+coverage/

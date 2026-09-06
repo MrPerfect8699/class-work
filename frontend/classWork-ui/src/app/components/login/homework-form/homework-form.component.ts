@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, OnInit, inject, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -28,14 +28,20 @@ import { HomeworkService } from '../../../services/homework.service';
   styleUrls: ['./homework-form.component.scss'],
 })
 export class HomeworkFormComponent implements OnInit {
-  @Output() homeworkCreated = new EventEmitter<void>();
+  private readonly fb = inject(FormBuilder);
+  private readonly hwService = inject(HomeworkService);
+
+  // Signal Output
+  readonly homeworkCreated = output<void>();
+
+  // Component Signals
+  readonly isLoading = signal<boolean>(false);
+  readonly errorMessage = signal<string | null>(null);
+  readonly successMessage = signal<string | null>(null);
 
   homeworkForm!: FormGroup;
-  isLoading = false;
-  errorMessage: string | null = null;
-  successMessage: string | null = null;
 
-  classes = [
+  readonly classes = [
     'Grade 6-A',
     'Grade 7-A',
     'Grade 8-A',
@@ -47,7 +53,7 @@ export class HomeworkFormComponent implements OnInit {
     'Other',
   ];
 
-  subjects = [
+  readonly subjects = [
     'Mathematics',
     'Physics',
     'Chemistry',
@@ -58,12 +64,11 @@ export class HomeworkFormComponent implements OnInit {
     'General',
   ];
 
-  constructor(
-    private fb: FormBuilder,
-    private hwService: HomeworkService
-  ) {}
-
   ngOnInit(): void {
+    this.initForm();
+  }
+
+  private initForm(): void {
     this.homeworkForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3)]],
       className: ['Grade 10-A', [Validators.required]],
@@ -79,9 +84,9 @@ export class HomeworkFormComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true;
-    this.errorMessage = null;
-    this.successMessage = null;
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
 
     const formVal = this.homeworkForm.value;
     const payload = {
@@ -94,8 +99,8 @@ export class HomeworkFormComponent implements OnInit {
 
     this.hwService.create(payload).subscribe({
       next: () => {
-        this.isLoading = false;
-        this.successMessage = 'Assignment published successfully!';
+        this.isLoading.set(false);
+        this.successMessage.set('Assignment published successfully!');
         this.homeworkForm.reset({
           className: 'Grade 10-A',
           subject: 'Mathematics',
@@ -104,20 +109,20 @@ export class HomeworkFormComponent implements OnInit {
 
         // Auto dismiss success after 4s
         setTimeout(() => {
-          this.successMessage = null;
+          this.successMessage.set(null);
         }, 4000);
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage =
-          err?.error?.error || 'Failed to create homework. Please try again.';
+        this.isLoading.set(false);
+        this.errorMessage.set(
+          err?.error?.error || 'Failed to create homework. Please try again.'
+        );
       },
     });
   }
 
   dismissAlert(): void {
-    this.errorMessage = null;
-    this.successMessage = null;
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
   }
 }
-

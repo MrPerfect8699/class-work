@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -16,10 +17,10 @@ export interface AuthResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  base = environment.apiBase;
-  tokenKey = 'cw_token';
-
-  constructor(private http: HttpClient) {}
+  private readonly http = inject(HttpClient);
+  private readonly platformId = inject(PLATFORM_ID);
+  readonly base = environment.apiBase;
+  readonly tokenKey = 'cw_token';
 
   register(teacher: Partial<Teacher>): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.base}/register`, teacher);
@@ -28,7 +29,7 @@ export class AuthService {
   login(email: string, password: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.base}/login`, { email, password }).pipe(
       map((response) => {
-        if (response && response.token) {
+        if (response && response.token && isPlatformBrowser(this.platformId)) {
           localStorage.setItem(this.tokenKey, response.token);
         }
         return response;
@@ -37,7 +38,10 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return typeof localStorage !== 'undefined' ? localStorage.getItem(this.tokenKey) : null;
+    if (isPlatformBrowser(this.platformId)) {
+      return localStorage.getItem(this.tokenKey);
+    }
+    return null;
   }
 
   isAuthenticated(): boolean {
@@ -45,7 +49,7 @@ export class AuthService {
   }
 
   logout(): void {
-    if (typeof localStorage !== 'undefined') {
+    if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem(this.tokenKey);
     }
   }

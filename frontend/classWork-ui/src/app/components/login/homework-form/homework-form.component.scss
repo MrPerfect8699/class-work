@@ -83,6 +83,13 @@
   justify-content: center;
   gap: 8px;
 
+  .btn-inner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
   .btn-icon {
     font-size: 20px;
     width: 20px;

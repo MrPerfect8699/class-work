@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { finalize } from 'rxjs/operators';
 import { HomeworkFormComponent } from '../homework-form/homework-form.component';
 import { HomeworkListComponent } from '../homework-list/homework-list.component';
 import { Homework } from '../../../entities/models';
@@ -27,28 +28,40 @@ import { AuthService } from '../../../core/auth.service';
   styleUrl: './dashboard.component.scss',
 })
 export class DashboardComponent implements OnInit {
-  homeworks: Homework[] = [];
-  isLoading = false;
+  private readonly hw = inject(HomeworkService);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
-  constructor(
-    private hw: HomeworkService,
-    private auth: AuthService,
-    private router: Router
-  ) {}
+  // Component Signals
+  readonly homeworks = signal<Homework[]>([]);
+  readonly isLoading = signal<boolean>(false);
+  readonly errorMessage = signal<string | null>(null);
+
+  // Computed state
+  readonly activeCount = computed(() => this.homeworks().length);
 
   ngOnInit(): void {
     this.loadHomeworks();
   }
 
   loadHomeworks(): void {
-    this.isLoading = true;
-    this.hw.list().subscribe({
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.hw.list().pipe(
+      finalize(() => {
+        this.isLoading.set(false);
+      })
+    ).subscribe({
       next: (data) => {
-        this.isLoading = false;
-        this.homeworks = data || [];
+        this.homeworks.set(Array.isArray(data) ? [...data] : []);
       },
-      error: () => {
-        this.isLoading = false;
+      error: (err) => {
+        console.error('Failed to load assignments:', err);
+        this.homeworks.set([]);
+        this.errorMessage.set(
+          err?.error?.error || 'Failed to load assignments. Please verify the server is running and try again.'
+        );
       },
     });
   }
@@ -62,4 +75,3 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/']);
   }
 }
-

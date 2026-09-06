@@ -11,10 +11,10 @@
 
     <mat-card class="auth-card">
       <!-- Error Alert Banner -->
-      @if (errorMessage) {
+      @if (errorMessage()) {
         <div class="alert alert-error" role="alert">
           <mat-icon class="alert-icon">error_outline</mat-icon>
-          <span class="alert-text">{{ errorMessage }}</span>
+          <span class="alert-text">{{ errorMessage() }}</span>
           <button mat-icon-button type="button" class="alert-dismiss" (click)="dismissAlert()" aria-label="Dismiss alert">
             <mat-icon>close</mat-icon>
           </button>
@@ -22,10 +22,10 @@
       }
 
       <!-- Success Alert Banner -->
-      @if (successMessage) {
+      @if (successMessage()) {
         <div class="alert alert-success" role="alert">
           <mat-icon class="alert-icon">check_circle_outline</mat-icon>
-          <span class="alert-text">{{ successMessage }}</span>
+          <span class="alert-text">{{ successMessage() }}</span>
           <button mat-icon-button type="button" class="alert-dismiss" (click)="dismissAlert()" aria-label="Dismiss alert">
             <mat-icon>close</mat-icon>
           </button>
@@ -34,7 +34,7 @@
 
       <!-- Tabbed Switcher -->
       <mat-tab-group
-        [selectedIndex]="selectedTabIndex"
+        [selectedIndex]="selectedTabIndex()"
         (selectedIndexChange)="switchTab($event)"
         mat-stretch-tabs="true"
         mat-align-tabs="center"
@@ -66,7 +66,7 @@
               <mat-label>Password</mat-label>
               <input
                 matInput
-                [type]="hideLoginPassword ? 'password' : 'text'"
+                [type]="hideLoginPassword() ? 'password' : 'text'"
                 formControlName="password"
                 placeholder="Enter your password"
                 autocomplete="current-password"
@@ -77,11 +77,11 @@
                 mat-icon-button
                 matSuffix
                 type="button"
-                (click)="hideLoginPassword = !hideLoginPassword"
+                (click)="hideLoginPassword.set(!hideLoginPassword())"
                 [attr.aria-label]="'Hide password'"
-                [attr.aria-pressed]="hideLoginPassword"
+                [attr.aria-pressed]="hideLoginPassword()"
               >
-                <mat-icon>{{ hideLoginPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                <mat-icon>{{ hideLoginPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
               </button>
               @if (loginForm.get('password')?.hasError('required')) {
                 <mat-error>Password is required</mat-error>
@@ -95,9 +95,9 @@
               color="primary"
               type="submit"
               class="submit-btn"
-              [disabled]="isLoading || loginForm.invalid"
+              [disabled]="isLoading() || loginForm.invalid"
             >
-              @if (isLoading) {
+              @if (isLoading()) {
                 <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
               } @else {
                 <span>Sign In to Dashboard</span>
@@ -159,7 +159,7 @@
               <mat-label>Password</mat-label>
               <input
                 matInput
-                [type]="hideRegisterPassword ? 'password' : 'text'"
+                [type]="hideRegisterPassword() ? 'password' : 'text'"
                 formControlName="password"
                 placeholder="Minimum 6 characters"
                 autocomplete="new-password"
@@ -170,11 +170,11 @@
                 mat-icon-button
                 matSuffix
                 type="button"
-                (click)="hideRegisterPassword = !hideRegisterPassword"
+                (click)="hideRegisterPassword.set(!hideRegisterPassword())"
                 [attr.aria-label]="'Hide password'"
-                [attr.aria-pressed]="hideRegisterPassword"
+                [attr.aria-pressed]="hideRegisterPassword()"
               >
-                <mat-icon>{{ hideRegisterPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                <mat-icon>{{ hideRegisterPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
               </button>
               @if (registerForm.get('password')?.hasError('required')) {
                 <mat-error>Password is required</mat-error>
@@ -272,9 +272,9 @@
               color="primary"
               type="submit"
               class="submit-btn"
-              [disabled]="isLoading || registerForm.invalid"
+              [disabled]="isLoading() || registerForm.invalid"
             >
-              @if (isLoading) {
+              @if (isLoading()) {
                 <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
               } @else {
                 <span>Create Teacher Account</span>
@@ -299,5 +299,3 @@
     </div>
   </div>
 </div>
-
-

@@ -43,7 +43,7 @@
         <div class="stat-card">
           <mat-icon class="stat-icon">assignment</mat-icon>
           <div class="stat-info">
-            <span class="stat-value">{{ homeworks.length }}</span>
+            <span class="stat-value">{{ activeCount() }}</span>
             <span class="stat-label">Active Assignments</span>
           </div>
         </div>
@@ -60,12 +60,12 @@
       <!-- Right Column: Homework Assignments List -->
       <section class="grid-col list-col">
         <app-homework-list
-          [homeworks]="homeworks"
-          [isLoading]="isLoading"
+          [homeworks]="homeworks()"
+          [isLoading]="isLoading()"
+          [errorMessage]="errorMessage()"
           (refreshRequested)="loadHomeworks()"
         ></app-homework-list>
       </section>
     </div>
   </main>
 </div>
-

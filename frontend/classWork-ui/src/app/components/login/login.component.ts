@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -31,17 +31,21 @@ import { AuthService } from '../../core/auth.service';
   ],
 })
 export class LoginComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
   loginForm!: FormGroup;
   registerForm!: FormGroup;
 
-  selectedTabIndex = 0;
-  hideLoginPassword = true;
-  hideRegisterPassword = true;
-  isLoading = false;
-  errorMessage: string | null = null;
-  successMessage: string | null = null;
+  readonly selectedTabIndex = signal<number>(0);
+  readonly hideLoginPassword = signal<boolean>(true);
+  readonly hideRegisterPassword = signal<boolean>(true);
+  readonly isLoading = signal<boolean>(false);
+  readonly errorMessage = signal<string | null>(null);
+  readonly successMessage = signal<string | null>(null);
 
-  departments = [
+  readonly departments = [
     'Mathematics',
     'Science & Technology',
     'English & Literature',
@@ -53,7 +57,7 @@ export class LoginComponent implements OnInit {
     'General',
   ];
 
-  designations = [
+  readonly designations = [
     'Teacher',
     'Senior Teacher',
     'Head of Department (HOD)',
@@ -61,14 +65,7 @@ export class LoginComponent implements OnInit {
     'Guest Lecturer',
   ];
 
-  constructor(
-    private fb: FormBuilder,
-    private auth: AuthService,
-    private router: Router
-  ) {}
-
   ngOnInit(): void {
-    // If already logged in, redirect to dashboard
     if (this.auth.isAuthenticated()) {
       this.router.navigate(['/dashboard']);
     }
@@ -96,14 +93,14 @@ export class LoginComponent implements OnInit {
   }
 
   switchTab(index: number): void {
-    this.selectedTabIndex = index;
-    this.errorMessage = null;
-    this.successMessage = null;
+    this.selectedTabIndex.set(index);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
   }
 
   dismissAlert(): void {
-    this.errorMessage = null;
-    this.successMessage = null;
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
   }
 
   onLogin(): void {
@@ -112,25 +109,26 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true;
-    this.errorMessage = null;
-    this.successMessage = null;
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
 
     const { email, password } = this.loginForm.value;
 
     this.auth.login(email, password).subscribe({
       next: (res) => {
-        this.isLoading = false;
+        this.isLoading.set(false);
         if (res && res.token) {
           this.router.navigate(['/dashboard']);
         } else {
-          this.errorMessage = 'Unexpected response from server. Please try again.';
+          this.errorMessage.set('Unexpected response from server. Please try again.');
         }
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage =
-          err?.error?.error || 'Invalid email or password. Please try again.';
+        this.isLoading.set(false);
+        this.errorMessage.set(
+          err?.error?.error || 'Invalid email or password. Please try again.'
+        );
       },
     });
   }
@@ -141,9 +139,9 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    this.isLoading = true;
-    this.errorMessage = null;
-    this.successMessage = null;
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
 
     const formValue = this.registerForm.value;
     const payload = {
@@ -160,25 +158,26 @@ export class LoginComponent implements OnInit {
 
     this.auth.register(payload).subscribe({
       next: (res) => {
-        this.isLoading = false;
+        this.isLoading.set(false);
         const assignedId = res.teacherId ? ` (ID: ${res.teacherId})` : '';
-        this.successMessage = `Registration successful${assignedId}! Please sign in with your credentials.`;
-        
-        // Auto-fill login email and switch to login tab
+        this.successMessage.set(
+          `Registration successful${assignedId}! Please sign in with your credentials.`
+        );
+
         this.loginForm.patchValue({ email: payload.email, password: '' });
         this.registerForm.reset({
           department: 'Mathematics',
           designation: 'Teacher',
           experienceYears: 0,
         });
-        this.selectedTabIndex = 0;
+        this.selectedTabIndex.set(0);
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage =
-          err?.error?.error || 'Registration failed. Please check the details and try again.';
+        this.isLoading.set(false);
+        this.errorMessage.set(
+          err?.error?.error || 'Registration failed. Please check the details and try again.'
+        );
       },
     });
   }
 }
-

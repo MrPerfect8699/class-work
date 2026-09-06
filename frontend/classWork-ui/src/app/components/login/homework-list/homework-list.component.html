@@ -1,134 +1,217 @@
-<div class="list-container">
-  <!-- List Header & Search Bar -->
-  <div class="list-header">
+<section aria-labelledby="assigned-homework-title" class="assignment-list-section">
+  <!-- Action Header Bar -->
+  <div class="list-action-header">
     <div class="header-left">
-      <h3 class="list-title">Assigned Homework</h3>
-      <span class="count-badge">{{ homeworks.length }} Total</span>
+      <h2 class="list-title" id="assigned-homework-title">
+        Assigned Homework
+      </h2>
+      <span class="total-pill">
+        {{ totalCount() }} Total
+      </span>
     </div>
 
-    <button
-      mat-icon-button
-      color="primary"
-      (click)="refreshRequested.emit()"
-      [disabled]="isLoading"
-      aria-label="Refresh homework list"
-      class="refresh-btn"
-    >
-      <mat-icon [class.spin-icon]="isLoading">refresh</mat-icon>
-    </button>
+    <!-- Controls: Filter Chips & Refresh -->
+    <div class="header-controls">
+      @if (totalCount() > 0) {
+        <div class="filter-pills-bar">
+          <button
+            type="button"
+            class="pill-btn"
+            [class.pill-active]="selectedClassFilter() === 'ALL'"
+            (click)="setClassFilter('ALL')"
+          >
+            All ({{ totalCount() }})
+          </button>
+          @for (cls of availableClasses(); track cls.name) {
+            <button
+              type="button"
+              class="pill-btn"
+              [class.pill-active]="selectedClassFilter() === cls.name"
+              (click)="setClassFilter(cls.name)"
+            >
+              {{ cls.name }} ({{ cls.count }})
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Refresh Button -->
+      <button
+        type="button"
+        class="refresh-icon-btn"
+        (click)="onRefreshClick()"
+        [disabled]="isLoading()"
+        aria-label="Refresh List"
+        matTooltip="Refresh assignments"
+      >
+        <mat-icon [class.spin-icon]="isLoading()">refresh</mat-icon>
+      </button>
+    </div>
   </div>
 
   <!-- Search Filter -->
-  @if (homeworks.length > 0) {
-    <div class="search-box">
-      <mat-form-field appearance="outline" class="search-field">
-        <mat-icon matPrefix class="search-icon">search</mat-icon>
+  @if (totalCount() > 0) {
+    <div class="search-filter-container">
+      <div class="search-input-wrap">
+        <mat-icon class="search-icon">search</mat-icon>
         <input
-          matInput
-          [(ngModel)]="searchTerm"
-          placeholder="Filter by title, class, or subject..."
+          type="text"
+          class="search-input"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="setSearchTerm($event)"
+          placeholder="Filter by title, class, subject, or description..."
         />
-        @if (searchTerm) {
+        @if (searchTerm()) {
           <button
-            mat-icon-button
-            matSuffix
-            (click)="searchTerm = ''"
-            aria-label="Clear search"
+            type="button"
+            class="search-clear-btn"
+            (click)="setSearchTerm('')"
+            aria-label="Clear search filter"
           >
             <mat-icon>close</mat-icon>
           </button>
         }
-      </mat-form-field>
+      </div>
     </div>
   }
 
   <!-- Error Banner -->
-  @if (errorMessage) {
+  @if (displayError()) {
     <div class="alert alert-error">
       <mat-icon class="alert-icon">error_outline</mat-icon>
-      <span class="alert-text">{{ errorMessage }}</span>
+      <span class="alert-text">{{ displayError() }}</span>
     </div>
   }
 
   <!-- Loading State -->
-  @if (isLoading) {
+  @if (isLoading()) {
     <div class="loading-state">
       <mat-spinner diameter="36"></mat-spinner>
       <p>Loading assignments...</p>
     </div>
   } @else {
-    <!-- Assignments Grid / Cards -->
-    <div class="homework-cards">
-      @for (h of filteredHomeworks; track h.id || $index) {
-        <mat-card class="hw-card">
-          <div class="hw-card-top">
-            <div class="hw-meta-badges">
-              <span class="badge badge-class">
-                <mat-icon class="badge-icon">groups</mat-icon>
-                {{ h.className }}
-              </span>
-              <span class="badge" [ngClass]="getSubjectColor(h.subject)">
-                <mat-icon class="badge-icon">subject</mat-icon>
-                {{ h.subject }}
-              </span>
+    <!-- Assignments Feed Container -->
+    <div class="assignment-cards-feed">
+      @for (h of filteredHomeworks(); track h.id || $index) {
+        <article class="assignment-card">
+          <div class="card-main-layout">
+            <!-- Left Info Section -->
+            <div class="card-info-col">
+              <!-- Meta Badges -->
+              <div class="card-meta-badges">
+                <span class="meta-badge" [ngClass]="getClassColor(h.className)">
+                  {{ h.className || 'Grade 10-A' }}
+                </span>
+                <span class="meta-badge" [ngClass]="getSubjectColor(h.subject)">
+                  {{ h.subject || 'General' }}
+                </span>
+                @if (h.createdAt) {
+                  <span class="meta-badge badge-due">
+                    <mat-icon class="badge-mini-icon">schedule</mat-icon>
+                    Published: {{ h.createdAt | date:'mediumDate' }}
+                  </span>
+                }
+              </div>
+
+              <!-- Title -->
+              <h3 class="assignment-title">
+                {{ h.title }}
+              </h3>
+
+              <!-- Description / Snippet -->
+              <p class="assignment-desc">
+                {{ h.description }}
+              </p>
+
+              <!-- Attached Resource Link -->
+              @if (h.attachments) {
+                <div class="attachment-wrap">
+                  <a
+                    [href]="h.attachments"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="attachment-badge-link"
+                  >
+                    <mat-icon class="attachment-icon">attach_file</mat-icon>
+                    <span>{{ getAttachmentName(h.attachments) }}</span>
+                  </a>
+                </div>
+              }
             </div>
 
-            <button
-              mat-icon-button
-              color="warn"
-              class="delete-btn"
-              (click)="deleteHomework(h.id)"
-              [disabled]="deletingId === h.id"
-              aria-label="Delete homework assignment"
-            >
-              @if (deletingId === h.id) {
-                <mat-spinner diameter="18"></mat-spinner>
-              } @else {
-                <mat-icon>delete_outline</mat-icon>
-              }
-            </button>
+            <!-- Right Metrics & Actions Column -->
+            <div class="card-metrics-col">
+              <!-- Submissions Progress -->
+              <div class="submissions-progress-box">
+                <div class="submissions-header">
+                  <span class="sub-label">Submissions</span>
+                  <span class="sub-count" [class.sub-complete]="getSubmissionsPercent(h) === 100">
+                    {{ getSubmissionsCount(h) }} / 28
+                    <span class="sub-percent">({{ getSubmissionsPercent(h) }}%)</span>
+                  </span>
+                </div>
+                <div class="progress-track">
+                  <div
+                    class="progress-fill"
+                    [class.fill-complete]="getSubmissionsPercent(h) === 100"
+                    [style.width.%]="getSubmissionsPercent(h)"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- Action CTA -->
+              <div class="card-action-cluster">
+                @if (getSubmissionsPercent(h) === 100) {
+                  <button type="button" class="btn-review-complete">
+                    <span>Review &amp; Grade ({{ getSubmissionsCount(h) }})</span>
+                  </button>
+                } @else {
+                  <button type="button" class="btn-view-subs">
+                    <span>View Submissions ({{ getSubmissionsCount(h) }})</span>
+                  </button>
+                }
+
+                <!-- More Options Menu (Delete, etc.) -->
+                <button
+                  mat-icon-button
+                  [matMenuTriggerFor]="cardMenu"
+                  class="more-opts-btn"
+                  aria-label="More assignment options"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+
+                <mat-menu #cardMenu="matMenu" xPosition="before">
+                  <button mat-menu-item (click)="deleteHomework(h.id)" [disabled]="deletingId() === h.id">
+                    <mat-icon color="warn">delete</mat-icon>
+                    <span>Delete Assignment</span>
+                  </button>
+                </mat-menu>
+              </div>
+            </div>
           </div>
-
-          <h4 class="hw-title">{{ h.title }}</h4>
-          <p class="hw-desc">{{ h.description }}</p>
-
-          <div class="hw-card-bottom">
-            @if (h.createdAt) {
-              <span class="hw-date">
-                <mat-icon class="date-icon">schedule</mat-icon>
-                Published: {{ h.createdAt | date:'mediumDate' }}
-              </span>
-            }
-
-            @if (h.attachments) {
-              <a
-                mat-stroked-button
-                color="primary"
-                [href]="h.attachments"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="attachment-link"
-              >
-                <mat-icon>attach_file</mat-icon>
-                <span>Attachment</span>
-              </a>
-            }
-          </div>
-        </mat-card>
+        </article>
       } @empty {
         <div class="empty-state">
           <div class="empty-icon-circle">
             <mat-icon class="empty-icon">assignment</mat-icon>
           </div>
-          @if (searchTerm) {
-            <h4>No matches found</h4>
-            <p>No assignments match "{{ searchTerm }}". Try a different search term.</p>
+          @if (searchTerm() || selectedClassFilter() !== 'ALL') {
+            <h4>No matching assignments</h4>
+            <p>No assignments match the selected filter or search term. Try resetting your search.</p>
+            <button
+              type="button"
+              class="reset-filter-btn"
+              (click)="clearFilters()"
+            >
+              Reset Filters
+            </button>
           } @else {
-            <h4>No assignments yet</h4>
+            <h4>No assignments published yet</h4>
             <p>Use the form on the left to create and publish homework for your students.</p>
           }
         </div>
       }
     </div>
   }
-</div>
+</section>
