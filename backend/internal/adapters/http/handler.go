@@ -9,13 +9,15 @@ import (
 type Handler struct {
 	authService     ports.AuthService
 	homeworkService ports.HomeworkService
+	aiService       ports.AIService
 }
 
 // NewHandler creates a new HTTP handler
-func NewHandler(authService ports.AuthService, homeworkService ports.HomeworkService) *Handler {
+func NewHandler(authService ports.AuthService, homeworkService ports.HomeworkService, aiService ports.AIService) *Handler {
 	return &Handler{
 		authService:     authService,
 		homeworkService: homeworkService,
+		aiService:       aiService,
 	}
 }
 
@@ -24,6 +26,7 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 	// Public routes
 	r.Post("/api/register", h.Register)
 	r.Post("/api/login", h.Login)
+	r.Post("/api/ai/assignments", h.GenerateAssignment)
 
 	// Protected routes
 	r.Group(func(r chi.Router) {

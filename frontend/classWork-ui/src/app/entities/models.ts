@@ -56,3 +56,22 @@ export interface Submission {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface GenerateAssignmentRequest {
+  class: string;
+  subject: string;
+  prompt: string;
+}
+
+export interface GeneratedQuestion {
+  question: string;
+  type: 'short_answer' | 'multiple_choice' | 'essay' | 'true_false' | string;
+  marks: number;
+}
+
+export interface GenerateAssignmentResponse {
+  title: string;
+  instructions: string;
+  questions: GeneratedQuestion[];
+  total_marks: number;
+}

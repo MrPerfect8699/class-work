@@ -15,6 +15,7 @@ type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	JWT      JWTConfig
+	AI       AIConfig
 	Env      string
 }
 
@@ -59,6 +60,14 @@ type JWTConfig struct {
 	Algorithm      string
 }
 
+// AIConfig holds AI / LLM configuration
+type AIConfig struct {
+	Provider string
+	APIKey   string
+	Model    string
+	Timeout  time.Duration
+}
+
 // LoadConfig loads configuration from environment variables
 func LoadConfig() (*Config, error) {
 	// Load .env file (optional, won't fail if not found)
@@ -69,8 +78,8 @@ func LoadConfig() (*Config, error) {
 		Server: ServerConfig{
 			Port:         getEnvInt("PORT", 8080),
 			Host:         getEnvString("HOST", "0.0.0.0"),
-			ReadTimeout:  getEnvDuration("READ_TIMEOUT", 10*time.Second),
-			WriteTimeout: getEnvDuration("WRITE_TIMEOUT", 10*time.Second),
+			ReadTimeout:  getEnvDuration("READ_TIMEOUT", 60*time.Second),
+			WriteTimeout: getEnvDuration("WRITE_TIMEOUT", 60*time.Second),
 			IdleTimeout:  getEnvDuration("IDLE_TIMEOUT", 120*time.Second),
 		},
 		Database: DatabaseConfig{
@@ -91,6 +100,12 @@ func LoadConfig() (*Config, error) {
 			ExpirationTime: getEnvDuration("JWT_EXPIRATION", 72*time.Hour),
 			RefreshTime:    getEnvDuration("JWT_REFRESH_TIME", 24*time.Hour),
 			Algorithm:      "HS256",
+		},
+		AI: AIConfig{
+			Provider: getEnvString("AI_PROVIDER", "gemini"),
+			APIKey:   getEnvString("GEMINI_API_KEY", getEnvString("AI_API_KEY", "")),
+			Model:    getEnvString("GEMINI_MODEL", "gemini-3.6-flash"),
+			Timeout:  getEnvDuration("AI_TIMEOUT", 60*time.Second),
 		},
 	}
 
@@ -136,5 +151,6 @@ func (c *Config) LogConfig() {
 	log.Printf("Read Timeout: %s", c.Server.ReadTimeout)
 	log.Printf("Write Timeout: %s", c.Server.WriteTimeout)
 	log.Printf("JWT Expiration: %s", c.JWT.ExpirationTime)
+	log.Printf("AI Provider: %s (Model: %s)", c.AI.Provider, c.AI.Model)
 	log.Println("=================================")
 }

@@ -1,0 +1,298 @@
+<mat-card class="generator-card">
+  <!-- Header Banner -->
+  <div class="card-header">
+    <div class="header-icon-badge">
+      <mat-icon>auto_awesome</mat-icon>
+    </div>
+    <div class="header-text">
+      <h3 class="header-title">AI Assignment Generator</h3>
+      <p class="header-subtitle">Create customized question sets and quizzes with Gemini AI</p>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  @if (errorMessage()) {
+    <div class="alert alert-error" role="alert">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span class="alert-text">{{ errorMessage() }}</span>
+      <button mat-icon-button type="button" class="alert-dismiss" (click)="dismissAlert()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Success Alert -->
+  @if (successMessage()) {
+    <div class="alert alert-success" role="alert">
+      <mat-icon class="alert-icon">check_circle_outline</mat-icon>
+      <span class="alert-text">{{ successMessage() }}</span>
+      <button mat-icon-button type="button" class="alert-dismiss" (click)="dismissAlert()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <!-- ================= STAGE 1: PROMPT INPUT ================= -->
+  @if (stage() === 'prompt') {
+    <form [formGroup]="promptForm" (ngSubmit)="onGenerate()" class="form-body">
+      <!-- Quick Prompt Suggestions Chips -->
+      <div class="presets-section">
+        <span class="presets-label">
+          <mat-icon class="label-icon">tips_and_updates</mat-icon>
+          Quick Suggestions:
+        </span>
+        <div class="chips-container">
+          @for (preset of promptPresets; track preset.label) {
+            <button
+              type="button"
+              class="preset-chip"
+              (click)="applyPreset(preset)"
+              matTooltip="Click to apply this prompt preset"
+            >
+              {{ preset.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Class & Subject Grid -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Target Class / Grade</mat-label>
+          <mat-select formControlName="className" required>
+            @for (c of classes; track c) {
+              <mat-option [value]="c">{{ c }}</mat-option>
+            }
+          </mat-select>
+          <mat-icon matPrefix class="field-icon">groups</mat-icon>
+          @if (promptForm.get('className')?.hasError('required')) {
+            <mat-error>Class is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Subject</mat-label>
+          <mat-select formControlName="subject" required>
+            @for (s of subjects; track s) {
+              <mat-option [value]="s">{{ s }}</mat-option>
+            }
+          </mat-select>
+          <mat-icon matPrefix class="field-icon">subject</mat-icon>
+          @if (promptForm.get('subject')?.hasError('required')) {
+            <mat-error>Subject is required</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <!-- Teacher Prompt Input -->
+      <mat-form-field appearance="outline" class="form-field prompt-field">
+        <mat-label>Teacher Instructions & Topics</mat-label>
+        <textarea
+          matInput
+          formControlName="prompt"
+          rows="4"
+          placeholder="e.g. Generate 5 questions on Newton's Laws of Motion with 2 MCQs and 3 problem solving questions with marks..."
+          required
+        ></textarea>
+        <mat-icon matPrefix class="field-icon">psychology</mat-icon>
+        @if (promptForm.get('prompt')?.hasError('required')) {
+          <mat-error>Prompt instructions are required</mat-error>
+        } @else if (promptForm.get('prompt')?.hasError('minlength')) {
+          <mat-error>Please provide at least 5 characters</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Generate Action Button -->
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        class="generate-btn"
+        [disabled]="promptForm.invalid"
+      >
+        <span class="btn-inner">
+          <mat-icon class="btn-icon">auto_awesome</mat-icon>
+          <span>Generate Assignment with Gemini</span>
+        </span>
+      </button>
+    </form>
+  }
+
+  <!-- ================= STAGE 2: GENERATION IN PROGRESS ================= -->
+  @if (stage() === 'generating') {
+    <div class="loading-state">
+      <div class="ai-sparkle-loader">
+        <mat-spinner diameter="48" color="primary"></mat-spinner>
+        <mat-icon class="sparkle-center">auto_awesome</mat-icon>
+      </div>
+      <h4 class="loading-title">Gemini is designing your assignment...</h4>
+      <p class="loading-subtitle">Structuring questions, calculating marking scheme, and formatting instructions.</p>
+    </div>
+  }
+
+  <!-- ================= STAGE 3: TEACHER REVIEW & EDIT ================= -->
+  @if (stage() === 'review' || stage() === 'publishing') {
+    <div class="review-wrapper">
+      <!-- Review Status Banner -->
+      <div class="review-status-bar">
+        <div class="status-tags">
+          <span class="tag-badge tag-class">
+            <mat-icon>groups</mat-icon>
+            {{ reviewClassName() }}
+          </span>
+          <span class="tag-badge tag-subject">
+            <mat-icon>book</mat-icon>
+            {{ reviewSubject() }}
+          </span>
+          <span class="tag-badge tag-questions">
+            <mat-icon>quiz</mat-icon>
+            {{ reviewQuestions().length }} Questions
+          </span>
+          <span class="tag-badge tag-marks">
+            <mat-icon>stars</mat-icon>
+            Total: {{ calculatedTotalMarks() }} Marks
+          </span>
+        </div>
+
+        <button mat-button type="button" class="back-link" (click)="backToPrompt()" [disabled]="stage() === 'publishing'">
+          <mat-icon>edit_note</mat-icon>
+          <span>Tweak Prompt</span>
+        </button>
+      </div>
+
+      <div class="review-section">
+        <!-- Editable Title -->
+        <mat-form-field appearance="outline" class="form-field full-width">
+          <mat-label>Assignment Title</mat-label>
+          <input
+            matInput
+            type="text"
+            [ngModel]="reviewTitle()"
+            (ngModelChange)="reviewTitle.set($event)"
+            placeholder="Assignment Title"
+          />
+          <mat-icon matPrefix class="field-icon">title</mat-icon>
+        </mat-form-field>
+
+        <!-- Editable Instructions -->
+        <mat-form-field appearance="outline" class="form-field full-width">
+          <mat-label>Student Instructions</mat-label>
+          <textarea
+            matInput
+            rows="2"
+            [ngModel]="reviewInstructions()"
+            (ngModelChange)="reviewInstructions.set($event)"
+            placeholder="Instructions for students"
+          ></textarea>
+          <mat-icon matPrefix class="field-icon">info</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Questions List Review & Inline Edit -->
+      <div class="questions-review-header">
+        <div class="header-left">
+          <mat-icon class="section-icon">format_list_numbered</mat-icon>
+          <h4>Review & Edit Questions</h4>
+        </div>
+        <button mat-stroked-button color="primary" type="button" class="add-q-btn" (click)="addQuestion()" [disabled]="stage() === 'publishing'">
+          <mat-icon>add</mat-icon>
+          <span>Add Question</span>
+        </button>
+      </div>
+
+      <div class="questions-list">
+        @for (q of reviewQuestions(); track $index; let i = $index) {
+          <div class="question-edit-card">
+            <!-- Question Card Top Bar -->
+            <div class="q-card-top">
+              <span class="q-number-badge">Q{{ i + 1 }}</span>
+
+              <div class="q-card-controls">
+                <!-- Question Type Select -->
+                <mat-form-field appearance="outline" class="mini-field type-field" subscriptSizing="dynamic">
+                  <mat-label>Type</mat-label>
+                  <mat-select [value]="q.type" (selectionChange)="updateQuestionType(i, $event.value)">
+                    @for (t of questionTypes; track t.value) {
+                      <mat-option [value]="t.value">{{ t.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <!-- Marks Input -->
+                <mat-form-field appearance="outline" class="mini-field marks-field" subscriptSizing="dynamic">
+                  <mat-label>Marks</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    min="1"
+                    max="100"
+                    [value]="q.marks"
+                    (input)="updateQuestionMarks(i, +$any($event.target).value)"
+                  />
+                </mat-form-field>
+
+                <!-- Delete Question Button -->
+                <button
+                  mat-icon-button
+                  color="warn"
+                  type="button"
+                  matTooltip="Delete this question"
+                  (click)="deleteQuestion(i)"
+                  [disabled]="stage() === 'publishing'"
+                  class="delete-q-btn"
+                >
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- Question Text Area -->
+            <mat-form-field appearance="outline" class="form-field full-width q-text-field">
+              <mat-label>Question Text</mat-label>
+              <textarea
+                matInput
+                rows="2"
+                [value]="q.question"
+                (input)="updateQuestionText(i, $any($event.target).value)"
+                placeholder="Question text..."
+              ></textarea>
+            </mat-form-field>
+          </div>
+        }
+      </div>
+
+      <!-- Review Actions Footer -->
+      <div class="review-actions-bar">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="onGenerate()"
+          [disabled]="stage() === 'publishing'"
+        >
+          <mat-icon>refresh</mat-icon>
+          <span>Regenerate</span>
+        </button>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="publish-btn"
+          (click)="onPublishAssignment()"
+          [disabled]="stage() === 'publishing' || reviewQuestions().length === 0"
+        >
+          @if (stage() === 'publishing') {
+            <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+          } @else {
+            <span class="btn-inner">
+              <mat-icon class="btn-icon">check_circle</mat-icon>
+              <span>Publish Reviewed Assignment</span>
+            </span>
+          }
+        </button>
+      </div>
+    </div>
+  }
+</mat-card>

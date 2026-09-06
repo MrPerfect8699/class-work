@@ -52,9 +52,37 @@
 
     <!-- 2-Column Responsive Layout -->
     <div class="dashboard-grid">
-      <!-- Left Column: Create Homework Form -->
+      <!-- Left Column: Creation Modes (AI Generator & Manual Form) -->
       <section class="grid-col form-col">
-        <app-homework-form (homeworkCreated)="onHomeworkCreated()"></app-homework-form>
+        <!-- Tab Switcher -->
+        <div class="mode-tabs-container">
+          <button
+            type="button"
+            class="mode-tab-btn"
+            [class.active]="activeTab() === 'ai'"
+            (click)="activeTab.set('ai')"
+          >
+            <mat-icon class="tab-icon">auto_awesome</mat-icon>
+            <span>AI Generator</span>
+            <span class="ai-badge">Gemini</span>
+          </button>
+
+          <button
+            type="button"
+            class="mode-tab-btn"
+            [class.active]="activeTab() === 'manual'"
+            (click)="activeTab.set('manual')"
+          >
+            <mat-icon class="tab-icon">edit_note</mat-icon>
+            <span>Manual Create</span>
+          </button>
+        </div>
+
+        @if (activeTab() === 'ai') {
+          <app-ai-generator (assignmentPublished)="onHomeworkCreated()"></app-ai-generator>
+        } @else {
+          <app-homework-form (homeworkCreated)="onHomeworkCreated()"></app-homework-form>
+        }
       </section>
 
       <!-- Right Column: Homework Assignments List -->
