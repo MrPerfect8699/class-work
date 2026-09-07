@@ -35,7 +35,7 @@ func (h *Handler) AuthMiddleware() func(http.Handler) http.Handler {
 				return
 			}
 
-			// Store teacherID in request context
+			// Store teacherID (int64) in request context
 			ctx := context.WithValue(r.Context(), "teacherID", teacherID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

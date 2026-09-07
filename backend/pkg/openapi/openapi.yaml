@@ -52,11 +52,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    example: "507f1f77bcf86cd799439011"
+                $ref: '#/components/schemas/TeacherProfile'
         '400':
           description: Invalid input
           content:
@@ -312,6 +308,62 @@ components:
           format: password
           description: Teacher's password (minimum 6 characters)
           example: "securepassword123"
+        teacherId:
+          type: string
+          description: Unique teacher/staff registration code (auto-generated if omitted)
+          example: "TCH-2026-001"
+        mobile:
+          type: string
+          description: Contact/mobile phone number
+          example: "+1-555-0199"
+        department:
+          type: string
+          description: Department/Faculty
+          example: "Mathematics"
+        designation:
+          type: string
+          description: Designation/Title
+          example: "Senior Teacher"
+        qualification:
+          type: string
+          description: Highest qualification
+          example: "M.Sc. in Mathematics, B.Ed."
+        experienceYears:
+          type: integer
+          description: Years of teaching experience
+          example: 5
+        avatarUrl:
+          type: string
+          description: Profile picture URL
+          example: "https://example.com/avatar.jpg"
+
+    TeacherProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        teacherId:
+          type: string
+          example: "TCH-2026-001"
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          example: "john@example.com"
+        mobile:
+          type: string
+          example: "+1-555-0199"
+        department:
+          type: string
+          example: "Mathematics"
+        designation:
+          type: string
+          example: "Senior Teacher"
+        status:
+          type: string
+          example: "ACTIVE"
 
     LoginRequest:
       type: object

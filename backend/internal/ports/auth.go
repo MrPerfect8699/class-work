@@ -1,10 +1,10 @@
 package ports
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import "github.com/yourname/classwork/backend/internal/domain"
 
 // AuthService defines the authentication service interface
 type AuthService interface {
-	Register(name, email, password string) (primitive.ObjectID, error)
+	Register(teacher *domain.Teacher) (*domain.Teacher, error)
 	Login(email, password string) (string, error)
-	ValidateToken(token string) (primitive.ObjectID, error)
+	ValidateToken(token string) (int64, error)
 }

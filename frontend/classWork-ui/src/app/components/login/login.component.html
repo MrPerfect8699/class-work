@@ -1,22 +1,301 @@
-<div class="login-page">
-  <mat-card>
-    <h2>{{ isRegister ? 'Register' : 'Teacher Login' }}</h2>
-    <div *ngIf="isRegister">
-      <mat-form-field style="width: 100%"
-        ><input matInput placeholder="Name" [(ngModel)]="name"
-      /></mat-form-field>
+<div class="auth-container">
+  <div class="auth-card-wrapper">
+    <!-- Branding Header -->
+    <div class="auth-header">
+      <div class="brand-badge">
+        <mat-icon class="brand-icon">school</mat-icon>
+      </div>
+      <h1 class="brand-title">Classwork Portal</h1>
+      <p class="brand-subtitle">Teacher Management & Assignment System</p>
     </div>
-    <mat-form-field style="width: 100%"
-      ><input matInput placeholder="Email" [(ngModel)]="email"
-    /></mat-form-field>
-    <mat-form-field style="width: 100%"
-      ><input matInput placeholder="Password" [(ngModel)]="password" type="password"
-    /></mat-form-field>
-    <button mat-raised-button color="primary" (click)="submit()">
-      {{ isRegister ? 'Register' : 'Login' }}
-    </button>
-    <button mat-button (click)="toggle()">
-      {{ isRegister ? 'Have an account? Login' : 'Register as teacher' }}
-    </button>
-  </mat-card>
+
+    <mat-card class="auth-card">
+      <!-- Error Alert Banner -->
+      @if (errorMessage()) {
+        <div class="alert alert-error" role="alert">
+          <mat-icon class="alert-icon">error_outline</mat-icon>
+          <span class="alert-text">{{ errorMessage() }}</span>
+          <button mat-icon-button type="button" class="alert-dismiss" (click)="dismissAlert()" aria-label="Dismiss alert">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      }
+
+      <!-- Success Alert Banner -->
+      @if (successMessage()) {
+        <div class="alert alert-success" role="alert">
+          <mat-icon class="alert-icon">check_circle_outline</mat-icon>
+          <span class="alert-text">{{ successMessage() }}</span>
+          <button mat-icon-button type="button" class="alert-dismiss" (click)="dismissAlert()" aria-label="Dismiss alert">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      }
+
+      <!-- Tabbed Switcher -->
+      <mat-tab-group
+        [selectedIndex]="selectedTabIndex()"
+        (selectedIndexChange)="switchTab($event)"
+        mat-stretch-tabs="true"
+        mat-align-tabs="center"
+        animationDuration="200ms"
+        class="auth-tabs"
+      >
+        <!-- ==================== SIGN IN TAB ==================== -->
+        <mat-tab label="Sign In">
+          <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="form-container">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Email Address</mat-label>
+              <input
+                matInput
+                type="email"
+                formControlName="email"
+                placeholder="teacher@school.edu"
+                autocomplete="email"
+                required
+              />
+              <mat-icon matPrefix class="field-icon">email</mat-icon>
+              @if (loginForm.get('email')?.hasError('required')) {
+                <mat-error>Email address is required</mat-error>
+              } @else if (loginForm.get('email')?.hasError('email')) {
+                <mat-error>Please enter a valid email address</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Password</mat-label>
+              <input
+                matInput
+                [type]="hideLoginPassword() ? 'password' : 'text'"
+                formControlName="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+              />
+              <mat-icon matPrefix class="field-icon">lock</mat-icon>
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="hideLoginPassword.set(!hideLoginPassword())"
+                [attr.aria-label]="'Hide password'"
+                [attr.aria-pressed]="hideLoginPassword()"
+              >
+                <mat-icon>{{ hideLoginPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              @if (loginForm.get('password')?.hasError('required')) {
+                <mat-error>Password is required</mat-error>
+              } @else if (loginForm.get('password')?.hasError('minlength')) {
+                <mat-error>Password must be at least 6 characters</mat-error>
+              }
+            </mat-form-field>
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              class="submit-btn"
+              [disabled]="isLoading() || loginForm.invalid"
+            >
+              @if (isLoading()) {
+                <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+              } @else {
+                <span>Sign In to Dashboard</span>
+              }
+            </button>
+
+            <div class="tab-switch-prompt">
+              <span>Don't have a teacher account?</span>
+              <button mat-button type="button" color="primary" (click)="switchTab(1)">
+                Register as Teacher
+              </button>
+            </div>
+          </form>
+        </mat-tab>
+
+        <!-- ==================== REGISTER TAB ==================== -->
+        <mat-tab label="Create Account">
+          <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="form-container">
+            <!-- Full Name -->
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Full Name</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="name"
+                placeholder="e.g. Dr. Jane Smith"
+                autocomplete="name"
+                required
+              />
+              <mat-icon matPrefix class="field-icon">person</mat-icon>
+              @if (registerForm.get('name')?.hasError('required')) {
+                <mat-error>Full name is required</mat-error>
+              } @else if (registerForm.get('name')?.hasError('minlength')) {
+                <mat-error>Name must be at least 2 characters</mat-error>
+              }
+            </mat-form-field>
+
+            <!-- Email Address -->
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Email Address</mat-label>
+              <input
+                matInput
+                type="email"
+                formControlName="email"
+                placeholder="e.g. jsmith@school.edu"
+                autocomplete="email"
+                required
+              />
+              <mat-icon matPrefix class="field-icon">email</mat-icon>
+              @if (registerForm.get('email')?.hasError('required')) {
+                <mat-error>Email address is required</mat-error>
+              } @else if (registerForm.get('email')?.hasError('email')) {
+                <mat-error>Please enter a valid email address</mat-error>
+              }
+            </mat-form-field>
+
+            <!-- Password -->
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Password</mat-label>
+              <input
+                matInput
+                [type]="hideRegisterPassword() ? 'password' : 'text'"
+                formControlName="password"
+                placeholder="Minimum 6 characters"
+                autocomplete="new-password"
+                required
+              />
+              <mat-icon matPrefix class="field-icon">lock</mat-icon>
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="hideRegisterPassword.set(!hideRegisterPassword())"
+                [attr.aria-label]="'Hide password'"
+                [attr.aria-pressed]="hideRegisterPassword()"
+              >
+                <mat-icon>{{ hideRegisterPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              @if (registerForm.get('password')?.hasError('required')) {
+                <mat-error>Password is required</mat-error>
+              } @else if (registerForm.get('password')?.hasError('minlength')) {
+                <mat-error>Password must be at least 6 characters</mat-error>
+              }
+            </mat-form-field>
+
+            <!-- Grid: Teacher ID & Mobile -->
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Staff / Teacher ID</mat-label>
+                <input
+                  matInput
+                  type="text"
+                  formControlName="teacherId"
+                  placeholder="e.g. TCH-2026-001"
+                />
+                <mat-icon matPrefix class="field-icon">badge</mat-icon>
+                <mat-hint>Optional (auto-generated if empty)</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Mobile Number</mat-label>
+                <input
+                  matInput
+                  type="tel"
+                  formControlName="mobile"
+                  placeholder="+1-555-0199"
+                  autocomplete="tel"
+                />
+                <mat-icon matPrefix class="field-icon">phone</mat-icon>
+                @if (registerForm.get('mobile')?.hasError('pattern')) {
+                  <mat-error>Enter a valid phone number</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <!-- Grid: Department & Designation -->
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Department</mat-label>
+                <mat-select formControlName="department">
+                  @for (dept of departments; track dept) {
+                    <mat-option [value]="dept">
+                      {{ dept }}
+                    </mat-option>
+                  }
+                </mat-select>
+                <mat-icon matPrefix class="field-icon">business</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Designation</mat-label>
+                <mat-select formControlName="designation">
+                  @for (desig of designations; track desig) {
+                    <mat-option [value]="desig">
+                      {{ desig }}
+                    </mat-option>
+                  }
+                </mat-select>
+                <mat-icon matPrefix class="field-icon">work_outline</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <!-- Grid: Qualification & Experience -->
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Qualification</mat-label>
+                <input
+                  matInput
+                  type="text"
+                  formControlName="qualification"
+                  placeholder="e.g. M.Sc, B.Ed"
+                />
+                <mat-icon matPrefix class="field-icon">school</mat-icon>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Experience (Years)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  max="50"
+                  formControlName="experienceYears"
+                  placeholder="0"
+                />
+                <mat-icon matPrefix class="field-icon">timeline</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              class="submit-btn"
+              [disabled]="isLoading() || registerForm.invalid"
+            >
+              @if (isLoading()) {
+                <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
+              } @else {
+                <span>Create Teacher Account</span>
+              }
+            </button>
+
+            <div class="tab-switch-prompt">
+              <span>Already registered?</span>
+              <button mat-button type="button" color="primary" (click)="switchTab(0)">
+                Sign In Instead
+              </button>
+            </div>
+          </form>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card>
+
+    <!-- Footer Security Note -->
+    <div class="auth-footer">
+      <mat-icon class="footer-icon">lock</mat-icon>
+      <span>Secured Teacher Authentication &bull; Classwork System</span>
+    </div>
+  </div>
 </div>

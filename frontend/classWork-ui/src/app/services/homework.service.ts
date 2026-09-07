@@ -1,23 +1,33 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { Homework } from '../entities/models';
-import { AuthService } from '../core/auth.service';
 import { environment } from '../../environment';
 
 @Injectable({ providedIn: 'root' })
 export class HomeworkService {
-  base = environment.apiBase;
-  constructor(private http: HttpClient, private auth: AuthService) {}
+  private readonly http = inject(HttpClient);
+  readonly base = environment.apiBase;
 
-  private headers() {
-    const token = this.auth.getToken();
-    return { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) };
+  create(hw: Partial<Homework>): Observable<Homework> {
+    return this.http.post<Homework>(`${this.base}/homework`, hw);
   }
 
-  create(hw: Homework) {
-    return this.http.post(`${this.base}/homework`, hw, this.headers());
+  list(teacherId?: number): Observable<Homework[]> {
+    const query = teacherId ? `?teacherId=${teacherId}` : '';
+    return this.http.get<Homework[]>(`${this.base}/homeworks${query}`);
   }
-  list(teacherId: number) {
-    return this.http.get<Homework[]>(`${this.base}/homeworks?teacherId=${teacherId}`, this.headers());
+
+  get(id: number): Observable<Homework> {
+    return this.http.get<Homework>(`${this.base}/homework/${id}`);
+  }
+
+  update(id: number, hw: Partial<Homework>): Observable<Homework> {
+    return this.http.put<Homework>(`${this.base}/homework/${id}`, hw);
+  }
+
+  delete(id: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.base}/homework/${id}`);
   }
 }
+

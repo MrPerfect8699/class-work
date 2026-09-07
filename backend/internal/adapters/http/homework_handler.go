@@ -3,10 +3,10 @@ package http
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/yourname/classwork/backend/internal/domain"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // CreateHomeworkRequest represents a create homework request
@@ -15,6 +15,7 @@ type CreateHomeworkRequest struct {
 	Description string `json:"description"`
 	ClassName   string `json:"className"`
 	Subject     string `json:"subject"`
+	TeacherID   int64  `json:"teacherId,omitempty"`
 	Attachments string `json:"attachments"`
 }
 
@@ -46,11 +47,17 @@ func (h *Handler) CreateHomework(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	teacherID, ok := r.Context().Value("teacherID").(primitive.ObjectID)
-	if !ok {
+	var teacherID int64
+	if ctxTeacherID, ok := r.Context().Value("teacherID").(int64); ok && ctxTeacherID > 0 {
+		teacherID = ctxTeacherID
+	} else if req.TeacherID > 0 {
+		teacherID = req.TeacherID
+	}
+
+	if teacherID <= 0 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "teacher_id not found in context"})
+		json.NewEncoder(w).Encode(map[string]string{"error": "teacher_id not found in context or request"})
 		return
 	}
 
@@ -78,8 +85,19 @@ func (h *Handler) CreateHomework(w http.ResponseWriter, r *http.Request) {
 
 // ListHomeworks handles listing homework assignments
 func (h *Handler) ListHomeworks(w http.ResponseWriter, r *http.Request) {
-	teacherID, ok := r.Context().Value("teacherID").(primitive.ObjectID)
-	if !ok {
+	var teacherID int64
+	if ctxTeacherID, ok := r.Context().Value("teacherID").(int64); ok && ctxTeacherID > 0 {
+		teacherID = ctxTeacherID
+	}
+
+	// Support query param ?teacherId=...
+	if queryTeacherID := r.URL.Query().Get("teacherId"); queryTeacherID != "" {
+		if parsedID, err := strconv.ParseInt(queryTeacherID, 10, 64); err == nil && parsedID > 0 {
+			teacherID = parsedID
+		}
+	}
+
+	if teacherID <= 0 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": "teacher_id not found in context"})
@@ -101,17 +119,17 @@ func (h *Handler) ListHomeworks(w http.ResponseWriter, r *http.Request) {
 
 // GetHomework handles getting a specific homework
 func (h *Handler) GetHomework(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	idStr := chi.URLParam(r, "id")
 
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil || id <= 0 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "invalid homework_id"})
 		return
 	}
 
-	homework, err := h.homeworkService.GetHomeworkByID(objID)
+	homework, err := h.homeworkService.GetHomeworkByID(id)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
@@ -126,7 +144,7 @@ func (h *Handler) GetHomework(w http.ResponseWriter, r *http.Request) {
 
 // UpdateHomework handles updating a homework
 func (h *Handler) UpdateHomework(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	idStr := chi.URLParam(r, "id")
 	var req UpdateHomeworkRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -136,15 +154,15 @@ func (h *Handler) UpdateHomework(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil || id <= 0 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "invalid homework_id"})
 		return
 	}
 
-	existing, err := h.homeworkService.GetHomeworkByID(objID)
+	existing, err := h.homeworkService.GetHomeworkByID(id)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
@@ -184,17 +202,17 @@ func (h *Handler) UpdateHomework(w http.ResponseWriter, r *http.Request) {
 
 // DeleteHomework handles deleting a homework
 func (h *Handler) DeleteHomework(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	idStr := chi.URLParam(r, "id")
 
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil || id <= 0 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "invalid homework_id"})
 		return
 	}
 
-	err = h.homeworkService.DeleteHomework(objID)
+	err = h.homeworkService.DeleteHomework(id)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)

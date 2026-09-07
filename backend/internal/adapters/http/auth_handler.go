@@ -3,13 +3,22 @@ package http
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/yourname/classwork/backend/internal/domain"
 )
 
 // RegisterRequest represents a registration request
 type RegisterRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Name            string `json:"name"`
+	Email           string `json:"email"`
+	Password        string `json:"password"`
+	TeacherID       string `json:"teacherId,omitempty"`
+	Mobile          string `json:"mobile,omitempty"`
+	Department      string `json:"department,omitempty"`
+	Designation     string `json:"designation,omitempty"`
+	Qualification   string `json:"qualification,omitempty"`
+	ExperienceYears int    `json:"experienceYears,omitempty"`
+	AvatarURL       string `json:"avatarUrl,omitempty"`
 }
 
 // LoginRequest represents a login request
@@ -20,9 +29,16 @@ type LoginRequest struct {
 
 // AuthResponse represents the authentication response
 type AuthResponse struct {
-	ID    string `json:"id,omitempty"`
-	Token string `json:"token,omitempty"`
-	Error string `json:"error,omitempty"`
+	ID          int64  `json:"id,omitempty"`
+	TeacherID   string `json:"teacherId,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Email       string `json:"email,omitempty"`
+	Mobile      string `json:"mobile,omitempty"`
+	Department  string `json:"department,omitempty"`
+	Designation string `json:"designation,omitempty"`
+	Status      string `json:"status,omitempty"`
+	Token       string `json:"token,omitempty"`
+	Error       string `json:"error,omitempty"`
 }
 
 // Register handles teacher registration
@@ -44,7 +60,20 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.authService.Register(req.Name, req.Email, req.Password)
+	teacher := &domain.Teacher{
+		TeacherID:       req.TeacherID,
+		Name:            req.Name,
+		Email:           req.Email,
+		Mobile:          req.Mobile,
+		Password:        req.Password,
+		Department:      req.Department,
+		Designation:     req.Designation,
+		Qualification:   req.Qualification,
+		ExperienceYears: req.ExperienceYears,
+		AvatarURL:       req.AvatarURL,
+	}
+
+	createdTeacher, err := h.authService.Register(teacher)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
@@ -54,7 +83,16 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(AuthResponse{ID: id.Hex()})
+	json.NewEncoder(w).Encode(AuthResponse{
+		ID:          createdTeacher.ID,
+		TeacherID:   createdTeacher.TeacherID,
+		Name:        createdTeacher.Name,
+		Email:       createdTeacher.Email,
+		Mobile:      createdTeacher.Mobile,
+		Department:  createdTeacher.Department,
+		Designation: createdTeacher.Designation,
+		Status:      createdTeacher.Status,
+	})
 }
 
 // Login handles teacher login
