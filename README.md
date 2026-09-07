@@ -99,7 +99,8 @@ classwork/
 ├── CODE_OF_CONDUCT.md            # Contributor Covenant Code of Conduct
 ├── CONTRIBUTING.md               # Guidelines for contributing to ClassWork
 ├── LICENSE                       # MIT License
-└── README.md                     # Project documentation
+├── README.md                     # Project documentation
+└── ROADMAP.md                    # Project roadmap & milestones
 ```
 
 ---
@@ -217,6 +218,12 @@ go test -v ./...
 cd frontend/classWork-ui
 npm test
 ```
+
+---
+
+## 🗺️ Roadmap
+
+Check out our [ROADMAP.md](ROADMAP.md) to see upcoming milestones, including Retrieval-Augmented Generation (RAG), autonomous AI agents, production observability, and student portals.
 
 ---
 

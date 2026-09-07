@@ -473,7 +473,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 📞 Support
 
 Need help? 
-- 📧 Email: support@example.com
+- 📧 Email: sshahapurkar0@gmail.com
 - 💬 Discussions: GitHub Issues
 - 🐦 Twitter: @yourhandle
 
