@@ -56,9 +56,23 @@ func (r *HomeworkRepositoryImpl) FindByID(id int64) (*domain.Homework, error) {
 	defer cancel()
 
 	query := `
-		SELECT id, title, description, class_name, subject, teacher_id, attachments, created_at, updated_at
-		FROM homework
-		WHERE id = $1
+		SELECT 
+			h.id, h.title, h.description, h.class_name, h.subject, h.teacher_id, h.attachments,
+			COALESCE(sub.sub_count, 0) AS submissions_count,
+			COALESCE(stu.stu_count, 0) AS total_students,
+			h.created_at, h.updated_at
+		FROM homework h
+		LEFT JOIN (
+			SELECT homework_id, COUNT(*) AS sub_count
+			FROM submissions
+			GROUP BY homework_id
+		) sub ON sub.homework_id = h.id
+		LEFT JOIN (
+			SELECT class_name, COUNT(*) AS stu_count
+			FROM students
+			GROUP BY class_name
+		) stu ON stu.class_name = h.class_name
+		WHERE h.id = $1
 	`
 
 	var hw domain.Homework
@@ -70,6 +84,8 @@ func (r *HomeworkRepositoryImpl) FindByID(id int64) (*domain.Homework, error) {
 		&hw.Subject,
 		&hw.TeacherID,
 		&hw.Attachments,
+		&hw.SubmissionsCount,
+		&hw.TotalStudents,
 		&hw.CreatedAt,
 		&hw.UpdatedAt,
 	)
@@ -90,10 +106,24 @@ func (r *HomeworkRepositoryImpl) FindByTeacherID(teacherID int64) ([]domain.Home
 	defer cancel()
 
 	query := `
-		SELECT id, title, description, class_name, subject, teacher_id, attachments, created_at, updated_at
-		FROM homework
-		WHERE teacher_id = $1
-		ORDER BY created_at DESC
+		SELECT 
+			h.id, h.title, h.description, h.class_name, h.subject, h.teacher_id, h.attachments,
+			COALESCE(sub.sub_count, 0) AS submissions_count,
+			COALESCE(stu.stu_count, 0) AS total_students,
+			h.created_at, h.updated_at
+		FROM homework h
+		LEFT JOIN (
+			SELECT homework_id, COUNT(*) AS sub_count
+			FROM submissions
+			GROUP BY homework_id
+		) sub ON sub.homework_id = h.id
+		LEFT JOIN (
+			SELECT class_name, COUNT(*) AS stu_count
+			FROM students
+			GROUP BY class_name
+		) stu ON stu.class_name = h.class_name
+		WHERE h.teacher_id = $1
+		ORDER BY h.created_at DESC
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, teacherID)
@@ -113,6 +143,8 @@ func (r *HomeworkRepositoryImpl) FindByTeacherID(teacherID int64) ([]domain.Home
 			&hw.Subject,
 			&hw.TeacherID,
 			&hw.Attachments,
+			&hw.SubmissionsCount,
+			&hw.TotalStudents,
 			&hw.CreatedAt,
 			&hw.UpdatedAt,
 		)
@@ -139,9 +171,23 @@ func (r *HomeworkRepositoryImpl) FindAll() ([]domain.Homework, error) {
 	defer cancel()
 
 	query := `
-		SELECT id, title, description, class_name, subject, teacher_id, attachments, created_at, updated_at
-		FROM homework
-		ORDER BY created_at DESC
+		SELECT 
+			h.id, h.title, h.description, h.class_name, h.subject, h.teacher_id, h.attachments,
+			COALESCE(sub.sub_count, 0) AS submissions_count,
+			COALESCE(stu.stu_count, 0) AS total_students,
+			h.created_at, h.updated_at
+		FROM homework h
+		LEFT JOIN (
+			SELECT homework_id, COUNT(*) AS sub_count
+			FROM submissions
+			GROUP BY homework_id
+		) sub ON sub.homework_id = h.id
+		LEFT JOIN (
+			SELECT class_name, COUNT(*) AS stu_count
+			FROM students
+			GROUP BY class_name
+		) stu ON stu.class_name = h.class_name
+		ORDER BY h.created_at DESC
 	`
 
 	rows, err := r.db.QueryContext(ctx, query)
@@ -161,6 +207,8 @@ func (r *HomeworkRepositoryImpl) FindAll() ([]domain.Homework, error) {
 			&hw.Subject,
 			&hw.TeacherID,
 			&hw.Attachments,
+			&hw.SubmissionsCount,
+			&hw.TotalStudents,
 			&hw.CreatedAt,
 			&hw.UpdatedAt,
 		)

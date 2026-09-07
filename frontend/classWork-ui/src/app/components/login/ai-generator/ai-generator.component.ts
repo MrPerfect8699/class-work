@@ -11,8 +11,10 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatMenuModule } from '@angular/material/menu';
 import { AiService } from '../../../services/ai.service';
 import { HomeworkService } from '../../../services/homework.service';
+import { ExportService } from '../../../services/export.service';
 import { GeneratedQuestion, GenerateAssignmentResponse } from '../../../entities/models';
 
 type GeneratorStage = 'prompt' | 'generating' | 'review' | 'publishing';
@@ -34,6 +36,7 @@ type GeneratorStage = 'prompt' | 'generating' | 'review' | 'publishing';
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatDividerModule,
+    MatMenuModule,
   ],
   templateUrl: './ai-generator.component.html',
   styleUrls: ['./ai-generator.component.scss'],
@@ -42,6 +45,7 @@ export class AiGeneratorComponent {
   private readonly fb = inject(FormBuilder);
   private readonly aiService = inject(AiService);
   private readonly hwService = inject(HomeworkService);
+  private readonly exportService = inject(ExportService);
 
   // Outputs
   readonly assignmentPublished = output<void>();
@@ -258,6 +262,42 @@ export class AiGeneratorComponent {
         );
       },
     });
+  }
+
+  // --- Export & Download Methods ---
+
+  onPrintWorksheet(): void {
+    this.exportService.printWorksheet({
+      title: this.reviewTitle() || 'Assignment',
+      className: this.reviewClassName(),
+      subject: this.reviewSubject(),
+      instructions: this.reviewInstructions(),
+      questions: this.reviewQuestions(),
+      totalMarks: this.calculatedTotalMarks(),
+    });
+  }
+
+  onDownloadText(): void {
+    this.exportService.downloadText({
+      title: this.reviewTitle() || 'Assignment',
+      className: this.reviewClassName(),
+      subject: this.reviewSubject(),
+      instructions: this.reviewInstructions(),
+      questions: this.reviewQuestions(),
+      totalMarks: this.calculatedTotalMarks(),
+    });
+  }
+
+  onDownloadJson(): void {
+    const data = {
+      title: this.reviewTitle(),
+      class: this.reviewClassName(),
+      subject: this.reviewSubject(),
+      instructions: this.reviewInstructions(),
+      questions: this.reviewQuestions(),
+      total_marks: this.calculatedTotalMarks(),
+    };
+    this.exportService.downloadJson(data, this.reviewTitle() || 'assignment');
   }
 
   dismissAlert(): void {

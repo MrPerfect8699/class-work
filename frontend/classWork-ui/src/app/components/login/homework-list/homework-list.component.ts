@@ -9,9 +9,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Homework } from '../../../entities/models';
 import { HomeworkService } from '../../../services/homework.service';
+import { ExportService } from '../../../services/export.service';
 
 @Component({
   selector: 'app-homework-list',
@@ -27,6 +29,7 @@ import { HomeworkService } from '../../../services/homework.service';
     MatInputModule,
     MatFormFieldModule,
     MatMenuModule,
+    MatDividerModule,
     MatTooltipModule,
   ],
   templateUrl: './homework-list.component.html',
@@ -34,6 +37,7 @@ import { HomeworkService } from '../../../services/homework.service';
 })
 export class HomeworkListComponent {
   private readonly hwService = inject(HomeworkService);
+  private readonly exportService = inject(ExportService);
 
   // Signal Inputs (Angular 17+)
   readonly homeworks = input<Homework[]>([]);
@@ -103,13 +107,18 @@ export class HomeworkListComponent {
   }
 
   getSubmissionsCount(h: Homework): number {
-    const seed = (h.id || 1) * 7;
-    return 18 + (seed % 11);
+    return h.submissionsCount ?? 0;
+  }
+
+  getTotalStudents(h: Homework): number {
+    return h.totalStudents && h.totalStudents > 0 ? h.totalStudents : 28;
   }
 
   getSubmissionsPercent(h: Homework): number {
+    const total = this.getTotalStudents(h);
+    if (total === 0) return 0;
     const count = this.getSubmissionsCount(h);
-    return Math.min(100, Math.round((count / 28) * 100));
+    return Math.min(100, Math.round((count / total) * 100));
   }
 
   getAttachmentName(url?: string): string {
@@ -163,5 +172,18 @@ export class HomeworkListComponent {
     if (s.includes('eng') || s.includes('lit')) return 'subject-english';
     if (s.includes('comp') || s.includes('tech')) return 'subject-tech';
     return 'subject-default';
+  }
+
+  // Export actions
+  printHomework(hw: Homework): void {
+    this.exportService.printHomework(hw);
+  }
+
+  downloadHomeworkText(hw: Homework): void {
+    this.exportService.downloadHomeworkText(hw);
+  }
+
+  downloadHomeworkJson(hw: Homework): void {
+    this.exportService.downloadJson(hw, hw.title || 'homework');
   }
 }

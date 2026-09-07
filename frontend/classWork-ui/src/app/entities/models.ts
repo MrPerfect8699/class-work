@@ -23,6 +23,8 @@ export interface Homework {
   subject?: string;
   attachments?: string;
   teacherId?: number;
+  submissionsCount?: number;
+  totalStudents?: number;
   createdAt?: string;
   updatedAt?: string;
 }

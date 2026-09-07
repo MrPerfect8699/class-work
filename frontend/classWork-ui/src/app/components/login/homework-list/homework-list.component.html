@@ -146,7 +146,7 @@
                 <div class="submissions-header">
                   <span class="sub-label">Submissions</span>
                   <span class="sub-count" [class.sub-complete]="getSubmissionsPercent(h) === 100">
-                    {{ getSubmissionsCount(h) }} / 28
+                    {{ getSubmissionsCount(h) }} / {{ getTotalStudents(h) }}
                     <span class="sub-percent">({{ getSubmissionsPercent(h) }}%)</span>
                   </span>
                 </div>
@@ -182,6 +182,19 @@
                 </button>
 
                 <mat-menu #cardMenu="matMenu" xPosition="before">
+                  <button mat-menu-item (click)="printHomework(h)">
+                    <mat-icon color="primary">print</mat-icon>
+                    <span>Print / PDF Worksheet</span>
+                  </button>
+                  <button mat-menu-item (click)="downloadHomeworkText(h)">
+                    <mat-icon>description</mat-icon>
+                    <span>Download as Text (.txt)</span>
+                  </button>
+                  <button mat-menu-item (click)="downloadHomeworkJson(h)">
+                    <mat-icon>code</mat-icon>
+                    <span>Export JSON (.json)</span>
+                  </button>
+                  <mat-divider></mat-divider>
                   <button mat-menu-item (click)="deleteHomework(h.id)" [disabled]="deletingId() === h.id">
                     <mat-icon color="warn">delete</mat-icon>
                     <span>Delete Assignment</span>

@@ -433,6 +433,26 @@
   margin-top: 8px;
   padding-top: 12px;
   border-top: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+
+  .left-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .export-menu-btn {
+    border-radius: 8px;
+    color: #475569;
+
+    .dropdown-arrow {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      margin-left: 2px;
+    }
+  }
 
   .publish-btn {
     height: 44px;

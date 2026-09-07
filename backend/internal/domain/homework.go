@@ -6,15 +6,17 @@ import (
 
 // Homework represents a homework assignment in the domain
 type Homework struct {
-	ID          int64     `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	ClassName   string    `json:"className"`
-	Subject     string    `json:"subject"`
-	TeacherID   int64     `json:"teacherId"`
-	Attachments string    `json:"attachments"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID               int64     `json:"id"`
+	Title            string    `json:"title"`
+	Description      string    `json:"description"`
+	ClassName        string    `json:"className"`
+	Subject          string    `json:"subject"`
+	TeacherID        int64     `json:"teacherId"`
+	Attachments      string    `json:"attachments"`
+	SubmissionsCount int       `json:"submissionsCount"`
+	TotalStudents    int       `json:"totalStudents"`
+	CreatedAt        time.Time `json:"createdAt"`
+	UpdatedAt        time.Time `json:"updatedAt"`
 }
 
 // Submission represents a homework submission

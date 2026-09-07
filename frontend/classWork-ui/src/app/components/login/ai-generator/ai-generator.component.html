@@ -265,15 +265,45 @@
 
       <!-- Review Actions Footer -->
       <div class="review-actions-bar">
-        <button
-          mat-stroked-button
-          type="button"
-          (click)="onGenerate()"
-          [disabled]="stage() === 'publishing'"
-        >
-          <mat-icon>refresh</mat-icon>
-          <span>Regenerate</span>
-        </button>
+        <div class="left-actions">
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="onGenerate()"
+            [disabled]="stage() === 'publishing'"
+          >
+            <mat-icon>refresh</mat-icon>
+            <span>Regenerate</span>
+          </button>
+
+          <!-- Export / Download Menu -->
+          <button
+            mat-stroked-button
+            type="button"
+            [matMenuTriggerFor]="exportMenu"
+            [disabled]="stage() === 'publishing' || reviewQuestions().length === 0"
+            class="export-menu-btn"
+          >
+            <mat-icon>download</mat-icon>
+            <span>Export / Print</span>
+            <mat-icon class="dropdown-arrow">arrow_drop_down</mat-icon>
+          </button>
+
+          <mat-menu #exportMenu="matMenu" xPosition="after">
+            <button mat-menu-item (click)="onPrintWorksheet()">
+              <mat-icon color="primary">print</mat-icon>
+              <span>Print / Save as PDF Worksheet</span>
+            </button>
+            <button mat-menu-item (click)="onDownloadText()">
+              <mat-icon>description</mat-icon>
+              <span>Download Text Document (.txt)</span>
+            </button>
+            <button mat-menu-item (click)="onDownloadJson()">
+              <mat-icon>code</mat-icon>
+              <span>Export Raw JSON (.json)</span>
+            </button>
+          </mat-menu>
+        </div>
 
         <button
           mat-flat-button
